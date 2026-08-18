@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🥊 Punch Face Live - Jogo de Batalha de Boxe Interativo para TikTok</title>
+  <meta name="description" content="Jogo de boxe interativo profissional para lives do TikTok com personalização de rosto via foto/webcam, cenários customizáveis e suporte a presentes e atalhos." />
+  <link rel="stylesheet" href="/src/styles/main.css" />
+  <link rel="stylesheet" href="/src/styles/modal.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Top Ultra-Clean HUD Layer -->
+    <header id="top-hud">
+      <div id="top-hud-bar">
+        <!-- Player Card (Left) -->
+        <div class="compact-fighter-card player-card">
+          <div class="hud-avatar">
+            <img id="player-avatar-preview" src="/assets/faces/chad.jpg" alt="Jogador" />
+          </div>
+          <div class="hud-details">
+            <div class="hud-name-row">
+              <span class="boxer-name" id="player-name-display">STREAMER</span>
+              <span class="ko-badge" id="player-ko-badge">K.O: 0</span>
+            </div>
+            <div class="hp-bar-outer">
+              <div class="hp-bar-fill" id="player-hp-fill" style="width: 100%;"></div>
+            </div>
+            <div class="hp-text" id="player-hp-text">1000 / 1000 HP</div>
+          </div>
+        </div>
+
+        <!-- Center Match Timer & Round -->
+        <div id="match-center-hud">
+          <span class="round-title" id="round-text">ROUND 1</span>
+          <span class="round-timer" id="round-timer-text">99</span>
+        </div>
+
+        <!-- Enemy Card (Right) -->
+        <div class="compact-fighter-card enemy-card">
+          <div class="hud-avatar">
+            <img id="enemy-avatar-preview" src="/assets/faces/boss.jpg" alt="Adversário" />
+          </div>
+          <div class="hud-details">
+            <div class="hud-name-row">
+              <span class="boxer-name" id="enemy-name-display">BOSS FIGHTER</span>
+              <span class="ko-badge" id="enemy-ko-badge">K.O: 0</span>
+            </div>
+            <div class="hp-bar-outer">
+              <div class="hp-bar-fill" id="enemy-hp-fill" style="width: 100%;"></div>
+            </div>
+            <div class="hp-text" id="enemy-hp-text">1000 / 1000 HP</div>
+          </div>
+        </div>
+
+        <!-- Top Right Settings Hub Trigger Button -->
+        <button id="btn-open-settings-hub" class="stream-settings-gear-btn" title="Abrir Central de Configurações (Atalho: C)">
+          <span class="gear-icon">⚙️</span>
+          <span class="gear-label">Configurações</span>
+        </button>
+      </div>
+
+      <!-- Guerra da Live (Tug-of-War Stream Bar) -->
+      <div id="live-war-container">
+        <div class="live-war-header">
+          <span class="war-side-player" id="war-player-text">■ AJUDAR STREAMER (<span id="war-player-pct">50%</span>)</span>
+          <span class="war-title">⚔️ GUERRA DA LIVE ⚔️</span>
+          <span class="war-side-enemy" id="war-enemy-text">(<span id="war-enemy-pct">50%</span>) TROLLAR / BOSS ■</span>
+        </div>
+        <div class="live-war-bar-outer">
+          <div class="live-war-bar-player" id="war-player-bar" style="width: 50%;"></div>
+          <div class="live-war-bar-enemy" id="war-enemy-bar" style="width: 50%;"></div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Floating Gift Alert Notifications -->
+    <div id="gift-alert-container"></div>
+
+    <!-- Main Game Canvas Area -->
+    <main id="game-canvas-container">
+      <canvas id="game-canvas"></canvas>
+    </main>
+
+    <!-- Floating Show UI Button (when Clean Stream Mode is active) -->
+    <button id="floating-show-ui-btn">👁️ Exibir Painéis da Live (H)</button>
+
+    <!-- ================= MODALS ================= -->
+
+    <!-- 0. Modal: Central de Configurações Geral (Settings Hub) -->
+    <div class="modal-overlay" id="settings-hub-modal">
+      <div class="modal-container settings-hub-container">
+        <div class="modal-header">
+          <h3 class="modal-title">⚙️ Central de Configurações da Live</h3>
+          <button class="close-modal-btn" id="close-settings-hub">&times;</button>
+        </div>
+        <div class="modal-body">
+          <!-- Ações Rápidas -->
+          <div class="settings-section">
+            <h4 class="settings-section-title">⚡ Ações Rápidas da Live</h4>
+            <div class="quick-actions-bar">
+              <button class="quick-act-btn" id="hub-btn-reset-match" title="Reiniciar combate imediatamente">
+                <span class="act-icon">🔄</span>
+                <span class="act-text">Novo Round</span>
+              </button>
+              <button class="quick-act-btn" id="hub-btn-toggle-sound" title="Ligar ou desligar som">
+                <span class="act-icon" id="hub-sound-icon">🔊</span>
+                <span class="act-text" id="hub-sound-text">Som Ativado</span>
+              </button>
+              <button class="quick-act-btn" id="hub-btn-toggle-aspect" title="Alternar entre 9:16 TikTok Studio e 16:9 PC">
+                <span class="act-icon">📱</span>
+                <span class="act-text" id="hub-aspect-text">Modo 9:16</span>
+              </button>
+              <button class="quick-act-btn" id="hub-btn-fullscreen" title="Modo tela cheia">
+                <span class="act-icon">⛶</span>
+                <span class="act-text">Tela Cheia</span>
+              </button>
+              <button class="quick-act-btn" id="hub-btn-toggle-clean-ui" title="Ocultar interface para captura limpa no OBS (Atalho: H)">
+                <span class="act-icon">👁️</span>
+                <span class="act-text">Live Limpa</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Módulos de Personalização e Regras -->
+          <div class="settings-section">
+            <h4 class="settings-section-title">🛠️ Personalização e Regras da Live</h4>
+            <div class="settings-cards-grid">
+              <!-- Card 1: Meu Rosto -->
+              <div class="settings-feature-card" id="hub-open-player-face">
+                <div class="card-feature-icon">👤</div>
+                <div class="card-feature-content">
+                  <h5>Meu Rosto (Streamer)</h5>
+                  <p>Tire foto na webcam ou envie uma imagem do computador com zoom e ajuste oval.</p>
+                </div>
+                <span class="card-feature-arrow">➜</span>
+              </div>
+
+              <!-- Card 2: Rosto do Boss -->
+              <div class="settings-feature-card" id="hub-open-enemy-face">
+                <div class="card-feature-icon">👹</div>
+                <div class="card-feature-content">
+                  <h5>Rosto do Boss Inimigo</h5>
+                  <p>Altere a foto do adversário para um amigo, boss personalizado ou presets.</p>
+                </div>
+                <span class="card-feature-arrow">➜</span>
+              </div>
+
+              <!-- Card 3: Regras & Presentes -->
+              <div class="settings-feature-card highlight-card" id="hub-open-battle-rules">
+                <div class="card-feature-icon">⚔️</div>
+                <div class="card-feature-content">
+                  <h5>Regras, HP & Quem Bate</h5>
+                  <p>Defina o HP dos lutadores e configure para cada presente se ele ajuda o Streamer ou o Boss!</p>
+                </div>
+                <span class="card-feature-arrow">➜</span>
+              </div>
+
+              <!-- Card 4: Cenários & Ringue -->
+              <div class="settings-feature-card" id="hub-open-arenas">
+                <div class="card-feature-icon">🏟️</div>
+                <div class="card-feature-content">
+                  <h5>Cenários & Ringue</h5>
+                  <p>Escolha o Estádio Internacional, Cyberpunk, 90s, Chroma Key verde ou envie seu fundo.</p>
+                </div>
+                <span class="card-feature-arrow">➜</span>
+              </div>
+
+              <!-- Card 5: Teclas & TikFinity -->
+              <div class="settings-feature-card" id="hub-open-hotkeys">
+                <div class="card-feature-icon">⌨️</div>
+                <div class="card-feature-content">
+                  <h5>Teclas de Atalho & TikFinity</h5>
+                  <p>Mapeie teclas do teclado para acionar socos automaticamente via TikFinity ou Streamer.bot.</p>
+                </div>
+                <span class="card-feature-arrow">➜</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Guia e Teste de Presentes (O que cada presente faz - dentro das configurações) -->
+          <div class="settings-section">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <h4 class="settings-section-title">🎁 O Que Cada Presente Faz (Guia & Teste de Golpes)</h4>
+              <small style="color: rgba(255,255,255,0.5); font-size: 11px;">💡 Clique em qualquer presente para testar o golpe</small>
+            </div>
+            <div class="hub-gifts-wrapper">
+              <!-- Lado Streamer -->
+              <div class="hub-gift-team-box team-streamer-box">
+                <div class="hub-team-header">
+                  <span class="tag-badge-streamer">🟢 PRESENTES QUE AJUDAM O STREAMER (VOCÊ)</span>
+                </div>
+                <div class="gift-cards-grid" id="streamer-gifts-grid"></div>
+              </div>
+
+              <!-- Lado Boss -->
+              <div class="hub-gift-team-box team-enemy-box">
+                <div class="hub-team-header">
+                  <span class="tag-badge-enemy">🔴 PRESENTES QUE AJUDAM O BOSS (TROLLAR)</span>
+                </div>
+                <div class="gift-cards-grid" id="enemy-gifts-grid"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="stream-btn btn-primary" id="close-settings-hub-footer">✅ Fechar Configurações</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 1. Modal: Face Customizer (Foto / Webcam) -->
+    <div class="modal-overlay" id="face-modal">
+      <div class="modal-container">
+        <div class="modal-header">
+          <h3 class="modal-title" id="face-modal-title">👤 Personalizar Rosto</h3>
+          <button class="close-modal-btn" id="close-face-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="face-sources-row">
+            <button class="source-btn" id="btn-start-webcam">
+              📷 Tirar Foto na Webcam
+            </button>
+            <label class="source-btn" for="face-file-input">
+              📁 Carregar Foto do Computador
+              <input type="file" id="face-file-input" accept="image/*" style="display: none;" />
+            </label>
+          </div>
+
+          <div id="webcam-container">
+            <video id="webcam-video" autoplay playsinline muted></video>
+            <button class="stream-btn btn-primary" id="btn-capture-snapshot">
+              📸 Capturar Agora!
+            </button>
+          </div>
+
+          <div id="crop-container" class="face-crop-wrapper">
+            <canvas id="crop-canvas" width="320" height="320"></canvas>
+            <small style="color: rgba(255, 255, 255, 0.6);">💡 Clique e arraste na imagem para ajustar a posição dentro da máscara oval do boxeador.</small>
+
+            <div class="crop-controls-grid">
+              <div class="slider-group">
+                <label>🔍 Zoom / Tamanho:</label>
+                <input type="range" id="face-zoom-slider" min="0.4" max="2.5" step="0.05" value="1.0" />
+              </div>
+              <div class="slider-group">
+                <label>🔄 Inclinação / Rotação:</label>
+                <input type="range" id="face-rot-slider" min="-90" max="90" step="1" value="0" />
+              </div>
+              <div class="slider-group">
+                <label>☀️ Brilho:</label>
+                <input type="range" id="face-bright-slider" min="50" max="180" step="5" value="100" />
+              </div>
+              <div class="slider-group">
+                <label>🎨 Contraste:</label>
+                <input type="range" id="face-contrast-slider" min="50" max="180" step="5" value="100" />
+              </div>
+            </div>
+
+            <div class="presets-row">
+              <span style="font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.7);">Rostos Prontos:</span>
+              <button class="preset-chip" id="preset-chad-btn">👑 GigaChad Campeão</button>
+              <button class="preset-chip" id="preset-boss-btn">👹 Boss Nervoso</button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="stream-btn" id="cancel-face-btn">Cancelar</button>
+          <button class="stream-btn btn-primary" id="save-face-btn">✅ Aplicar Rosto no Boxeador</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Modal: Arenas & Cenários -->
+    <div class="modal-overlay" id="arena-modal">
+      <div class="modal-container">
+        <div class="modal-header">
+          <h3 class="modal-title">🏟️ Cenários & Personalização do Ringue</h3>
+          <button class="close-modal-btn" id="close-arena-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="arena-grid">
+            <div class="arena-card selected" data-theme="championship">
+              <img src="/assets/arenas/championship.jpg" class="arena-card-thumb" alt="Championship" />
+              <span class="arena-card-title">Estádio Internacional</span>
+            </div>
+            <div class="arena-card" data-theme="cyberpunk">
+              <img src="/assets/arenas/cyberpunk.jpg" class="arena-card-thumb" alt="Cyberpunk" />
+              <span class="arena-card-title">Cyberpunk Fight Club</span>
+            </div>
+            <div class="arena-card" data-theme="retro">
+              <img src="/assets/arenas/retro.jpg" class="arena-card-thumb" alt="Retro" />
+              <span class="arena-card-title">Academia Vintage 90s</span>
+            </div>
+            <div class="arena-card" data-theme="chroma">
+              <div class="arena-card-thumb chroma-thumb"></div>
+              <span class="arena-card-title">Chroma Key (Fundo Verde)</span>
+            </div>
+            <div class="arena-card" data-theme="transparent">
+              <div class="arena-card-thumb trans-thumb"></div>
+              <span class="arena-card-title">Transparente (OBS Overlay)</span>
+            </div>
+          </div>
+
+          <div class="face-sources-row" style="margin-top: 10px;">
+            <label class="source-btn" for="arena-file-input" style="width: 100%;">
+              🖼️ Fazer Upload de Imagem de Fundo Própria
+              <input type="file" id="arena-file-input" accept="image/*" style="display: none;" />
+            </label>
+          </div>
+
+          <div class="text-input-group">
+            <label>🥊 Texto do Centro do Ringue / Lona:</label>
+            <input type="text" id="ring-text-input" class="custom-text-input" value="🥊 PUNCH FACE LIVE 🥊" placeholder="Ex: LIVE DO @SEUNOME" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="stream-btn btn-primary" id="close-arena-footer-btn">Concluído</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Modal: Teclas de Atalho & TikFinity Integration -->
+    <div class="modal-overlay" id="hotkeys-modal">
+      <div class="modal-container">
+        <div class="modal-header">
+          <h3 class="modal-title">⌨️ Teclas de Atalho & Integração com Lives</h3>
+          <button class="close-modal-btn" id="close-hotkeys-modal">&times;</button>
+        </div>
+          <!-- TikTok Live Direct Bridge Connection Box -->
+          <div style="background: rgba(255, 0, 85, 0.08); border: 1px solid rgba(255, 0, 85, 0.3); border-radius: 14px; padding: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <strong style="color: #ff5577; font-size: 14px; display: flex; align-items: center; gap: 6px;">
+                <span>📱</span> Conectar Direto na Live do TikTok (@usuario)
+              </strong>
+              <span id="tiktok-status-chip" style="font-size: 11px; font-weight: 800; color: #00ff88; background: rgba(0, 255, 136, 0.15); padding: 2px 8px; border-radius: 8px;">Pronto para Conectar</span>
+            </div>
+            <p style="font-size: 12px; color: rgba(255, 255, 255, 0.7); margin-bottom: 10px;">
+              Digite o seu @usuario do TikTok para escutar os presentes e likes em tempo real:
+            </p>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="tiktok-username-input" class="custom-text-input" placeholder="Ex: @seunomedotiktok" style="flex: 1;" />
+              <button class="stream-btn btn-primary" id="tiktok-connect-btn" style="white-space: nowrap; padding: 8px 18px;">
+                Conectar Live
+              </button>
+            </div>
+          </div>
+
+          <div style="margin-top: 10px;">
+            <h4 style="font-size: 14px; color: var(--gold); margin-bottom: 8px;">⌨️ Mapeamento de Teclas para TikFinity / Stream Deck</h4>
+            <p style="font-size: 12px; color: rgba(255, 255, 255, 0.8); line-height: 1.5; margin-bottom: 10px;">
+              No <strong>TikFinity</strong>, configure "Actions -> Send Key" para as teclas abaixo quando o chat enviar presentes:
+            </p>
+          </div>
+
+          <div id="hotkeys-list"></div>
+
+          <div style="background: rgba(0, 229, 255, 0.08); border: 1px solid rgba(0, 229, 255, 0.3); border-radius: 12px; padding: 14px;">
+            <strong style="color: var(--player-color); font-size: 13px;">🔗 Integração Externa via JavaScript / Webhook:</strong>
+            <p style="font-size: 12px; margin-top: 6px; color: rgba(255, 255, 255, 0.8);">
+              Você também pode acionar os golpes diretamente no console do navegador ou script de automação usando:
+            </p>
+            <code style="display: block; background: #000; padding: 8px 12px; border-radius: 6px; font-family: monospace; font-size: 12px; color: #00ff88; margin-top: 6px;">
+              window.PunchFaceLive.playerJab({ username: 'NomeDoDoador' });<br/>
+              window.PunchFaceLive.playerUppercut({ username: 'NomeDoDoador' });
+            </code>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="stream-btn btn-primary" id="close-hotkeys-footer-btn">Fechar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Modal: Regras de Batalha, HP & Times de Presentes -->
+    <div class="modal-overlay" id="battle-rules-modal">
+      <div class="modal-container" style="max-width: 800px;">
+        <div class="modal-header">
+          <h3 class="modal-title">⚔️ Regras de Batalha, Vida (HP) & Presentes</h3>
+          <button class="close-modal-btn" id="close-battle-rules-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 18px;">
+            <h4 style="font-size: 16px; color: var(--gold); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+              <span>🥊</span> Personalização de Vida (HP) e Nomes
+            </h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+              <div class="text-input-group">
+                <label style="color: var(--player-color); font-weight: 800;">👤 Nome do Streamer (Você):</label>
+                <input type="text" id="player-name-input" class="custom-text-input" value="STREAMER" />
+                <label style="color: var(--player-color); margin-top: 6px;">❤️ Vida Máxima (HP):</label>
+                <input type="number" id="player-max-hp-input" class="custom-text-input" value="1000" min="100" max="100000" step="100" />
+                <div style="display: flex; gap: 6px; margin-top: 6px;">
+                  <button class="preset-chip btn-hp-preset" data-target="player" data-val="500">500 HP</button>
+                  <button class="preset-chip btn-hp-preset" data-target="player" data-val="1000">1.000 HP</button>
+                  <button class="preset-chip btn-hp-preset" data-target="player" data-val="2500">2.500 HP</button>
+                </div>
+              </div>
+
+              <div class="text-input-group">
+                <label style="color: var(--enemy-color); font-weight: 800;">👹 Nome do Adversário / Boss:</label>
+                <input type="text" id="enemy-name-input" class="custom-text-input" value="BOSS FIGHTER" />
+                <label style="color: var(--enemy-color); margin-top: 6px;">❤️ Vida Máxima (HP):</label>
+                <input type="number" id="enemy-max-hp-input" class="custom-text-input" value="1000" min="100" max="100000" step="100" />
+                <div style="display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;">
+                  <button class="preset-chip btn-hp-preset" data-target="enemy" data-val="1000">1.000 HP</button>
+                  <button class="preset-chip btn-hp-preset" data-target="enemy" data-val="5000">5.000 HP</button>
+                  <button class="preset-chip btn-hp-preset" data-target="enemy" data-val="10000">10k Boss</button>
+                  <button class="preset-chip btn-hp-preset" data-target="enemy" data-val="25000">25k Raid</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 18px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <h4 style="font-size: 16px; color: var(--gold); display: flex; align-items: center; gap: 8px;">
+                <span>🎁</span> Regras dos Presentes (Quem Ataca e Danos)
+              </h4>
+              <button class="stream-btn" id="btn-restore-default-gifts" style="padding: 4px 10px; font-size: 11px;">
+                🔄 Restaurar Padrões
+              </button>
+            </div>
+            <p style="font-size: 12px; color: rgba(255, 255, 255, 0.7); margin-bottom: 12px;">
+              Defina para cada presente se ele ajuda o <strong>Streamer</strong> a bater no Boss ou se ele faz o <strong>Boss atacar o Streamer de volta</strong>!
+            </p>
+
+            <div id="gifts-table-container"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="stream-btn" id="cancel-battle-rules-btn">Fechar</button>
+          <button class="stream-btn btn-primary" id="save-battle-rules-btn">💾 Salvar Regras de Batalha</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

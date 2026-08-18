@@ -1,0 +1,455 @@
+import { audio } from '../engine/audioEngine.js';
+
+// TikTok Live gifts manager with custom battle rules (Player vs Enemy team targets) and anti-lag batching
+export class TikTokManager {
+  constructor(game) {
+    this.game = game;
+
+    // Stream Goal Config
+    this.goal = {
+      title: 'Meta da Live: Nocautear o Boss',
+      giftType: 'rose',
+      target: 100,
+      current: 0
+    };
+
+    // Leaderboard
+    this.topGifters = new Map();
+
+    // Official TikTok Live Gifts Catalog (Exact names, real coins and official icons)
+    this.defaultGifts = [
+      // Streamer Team Gifts (Ajudam o Streamer a bater no Boss)
+      { id: 'rose', name: 'Rosa', coins: 1, icon: '🌹', target: 'player', punchType: 'jab', damage: 15, aliases: ['rose', 'rosa', '5655'] },
+      { id: 'tiktok', name: 'TikTok', coins: 1, icon: '🎵', target: 'player', punchType: 'jab', damage: 15, aliases: ['tiktok', 'tiktok logo', '5269'] },
+      { id: 'panda', name: 'Mini Panda', coins: 5, icon: '🐼', target: 'player', punchType: 'jab', damage: 20, aliases: ['panda', 'mini panda', '5487'] },
+      { id: 'heart', name: 'Heart Me', coins: 10, icon: '💖', target: 'player', punchType: 'cross', damage: 35, aliases: ['heart', 'heart me', 'coração', '5760'] },
+      { id: 'sunglasses', name: 'Óculos de Sol', coins: 199, icon: '🕶️', target: 'player', punchType: 'hook', damage: 90, aliases: ['sunglasses', 'oculos', 'óculos', '5657'] },
+      { id: 'moneygun', name: 'Money Gun', coins: 500, icon: '🔫', target: 'player', punchType: 'uppercut', damage: 200, aliases: ['moneygun', 'money gun', 'pistola de dinheiro', '5650'] },
+      { id: 'galaxy', name: 'Galáxia', coins: 1000, icon: '🌌', target: 'player', punchType: 'super', damage: 450, aliases: ['galaxy', 'galaxia', 'galáxia', '5659'] },
+      { id: 'universe', name: 'Universo TikTok', coins: 34999, icon: '✨', target: 'player', punchType: 'super', damage: 2500, aliases: ['universe', 'universo', 'tiktok universe', '5844'] },
+
+      // Enemy Team Gifts (Ajudam o Boss / Trollar o Streamer)
+      { id: 'icecream', name: 'Casquinha', coins: 1, icon: '🍦', target: 'enemy', punchType: 'jab', damage: 10, aliases: ['ice cream', 'icecream', 'casquinha', 'sorvete', '5879'] },
+      { id: 'doughnut', name: 'Rosquinha', coins: 30, icon: '🍩', target: 'enemy', punchType: 'jab', damage: 30, aliases: ['doughnut', 'donut', 'rosquinha', '5827'] },
+      { id: 'duck', name: 'Patinho', coins: 50, icon: '🦆', target: 'enemy', punchType: 'jab', damage: 45, aliases: ['duck', 'pato', 'patinho', '5828'] },
+      { id: 'cap', name: 'Boné GG', coins: 99, icon: '🧢', target: 'enemy', punchType: 'hook', damage: 75, aliases: ['cap', 'bone', 'boné', 'cap and mustache', '5658'] },
+      { id: 'corgi', name: 'Corgi Dog', coins: 299, icon: '🐶', target: 'enemy', punchType: 'hook', damage: 120, aliases: ['corgi', 'dog', 'cachorro'] },
+      { id: 'whale', name: 'Baleia', coins: 2150, icon: '🐳', target: 'enemy', punchType: 'uppercut', damage: 500, aliases: ['whale', 'baleia', 'whale diving'] },
+      { id: 'car', name: 'Carro Esportivo', coins: 7000, icon: '🏎️', target: 'enemy', punchType: 'super', damage: 900, aliases: ['car', 'carro', 'sports car'] },
+      { id: 'falcon', name: 'Falcão', coins: 10999, icon: '🦅', target: 'enemy', punchType: 'super', damage: 1400, aliases: ['falcon', 'falcao', 'falcão'] },
+      { id: 'lion', name: 'Leão TikTok', coins: 29999, icon: '🦁', target: 'enemy', punchType: 'super', damage: 2000, aliases: ['lion', 'leao', 'leão', '5653'] }
+    ];
+
+    this.gifts = JSON.parse(JSON.stringify(this.defaultGifts));
+
+    this.ws = null;
+    this.isConnected = false;
+
+    this.loadSavedSettings();
+    this.initDOM();
+    this.renderGiftButtons();
+    this.updateGoalUI();
+    this.updateLeaderboardUI();
+  }
+
+  findGift(giftIdentifier) {
+    if (!giftIdentifier) return this.gifts[0];
+    const clean = String(giftIdentifier).toLowerCase().trim();
+
+    // 1. Direct ID match
+    let matched = this.gifts.find((g) => g.id.toLowerCase() === clean);
+    if (matched) return matched;
+
+    // 2. Exact Name match
+    matched = this.gifts.find((g) => g.name.toLowerCase() === clean);
+    if (matched) return matched;
+
+    // 3. Alias / Numeric ID match
+    matched = this.gifts.find((g) => g.aliases && g.aliases.some((a) => a.toLowerCase() === clean));
+    if (matched) return matched;
+
+    // 4. Substring partial match
+    matched = this.gifts.find((g) => g.name.toLowerCase().includes(clean) || clean.includes(g.id.toLowerCase()));
+    if (matched) return matched;
+
+    return this.gifts[0];
+  }
+
+  initDOM() {
+    this.streamerGiftsGrid = document.getElementById('streamer-gifts-grid');
+    this.enemyGiftsGrid = document.getElementById('enemy-gifts-grid');
+    this.giftBar = document.getElementById('gift-quick-bar');
+    this.giftAlertContainer = document.getElementById('gift-alert-container');
+    this.leaderboardList = document.getElementById('top-gifters-list');
+
+    this.connectBtn = document.getElementById('tiktok-connect-btn');
+    this.usernameInput = document.getElementById('tiktok-username-input');
+
+    if (this.connectBtn) {
+      this.connectBtn.addEventListener('click', () => this.toggleTikTokConnection());
+    }
+  }
+
+  getEffectLabel(gift) {
+    const isEnemy = gift.target === 'enemy';
+    const isPlayerHeal = gift.target === 'heal_player';
+    const isEnemyHeal = gift.target === 'heal_enemy';
+
+    if (isPlayerHeal) return `+${gift.damage} HP Cura`;
+    if (isEnemyHeal) return `+${gift.damage} HP Boss`;
+
+    const punchNames = {
+      jab: 'Jab',
+      cross: 'Direto',
+      hook: 'Cruzado',
+      uppercut: 'Uppercut',
+      super: 'Super Combo'
+    };
+    const punchName = punchNames[gift.punchType] || 'Golpe';
+
+    if (isEnemy) {
+      return `+${gift.damage} Dano no Streamer (${punchName})`;
+    }
+    return `+${gift.damage} Dano (${punchName})`;
+  }
+
+  createGiftCardElement(g, isEnemy) {
+    const card = document.createElement('div');
+    card.className = `live-gift-card ${isEnemy ? 'card-team-enemy' : 'card-team-streamer'}`;
+    card.setAttribute('data-gift-id', g.id);
+    card.title = `Clique para testar o presente ${g.name}!`;
+
+    let teamTagHtml = '';
+    if (g.target === 'player') {
+      teamTagHtml = '<span class="card-team-badge badge-streamer">🟢 AJUDA STREAMER</span>';
+    } else if (g.target === 'enemy') {
+      teamTagHtml = '<span class="card-team-badge badge-enemy">🔴 AJUDA O BOSS</span>';
+    } else if (g.target === 'heal_player') {
+      teamTagHtml = '<span class="card-team-badge badge-heal-player">💚 CURA STREAMER</span>';
+    } else if (g.target === 'heal_enemy') {
+      teamTagHtml = '<span class="card-team-badge badge-heal-enemy">❤️ CURA BOSS</span>';
+    }
+
+    const effectText = this.getEffectLabel(g);
+
+    card.innerHTML = `
+      <div class="card-left-icon">
+        <span class="gift-emoji">${g.icon}</span>
+      </div>
+      <div class="card-center-info">
+        <div class="card-title-row">
+          <strong class="gift-name">${g.name}</strong>
+          <span class="gift-coins-chip">${g.coins.toLocaleString('pt-BR')} 🪙</span>
+        </div>
+        <div class="card-effect-desc">
+          <span class="effect-icon">${isEnemy ? '👹' : '🥊'}</span>
+          <span class="effect-text">${effectText}</span>
+        </div>
+        <div class="card-team-row">
+          ${teamTagHtml}
+        </div>
+      </div>
+    `;
+
+    card.addEventListener('click', () => {
+      const randomNames = ['Maria_VIP', 'Lucas_Live', 'Ana_KO', 'Rodrigo_Punch', 'TikToker_Gamer', 'Ninja_Fighter', 'Troll_Chat', 'Fã_Numero1'];
+      const randomName = randomNames[Math.floor(Math.random() * randomNames.length)];
+      this.triggerGift(g.id, 1, randomName);
+    });
+
+    return card;
+  }
+
+  renderGiftButtons() {
+    // If we have the modern live stream legend grids:
+    if (this.streamerGiftsGrid && this.enemyGiftsGrid) {
+      this.streamerGiftsGrid.innerHTML = '';
+      this.enemyGiftsGrid.innerHTML = '';
+
+      this.gifts.forEach((g) => {
+        const isEnemy = g.target === 'enemy' || g.target === 'heal_enemy';
+        const card = this.createGiftCardElement(g, isEnemy);
+
+        if (isEnemy) {
+          this.enemyGiftsGrid.appendChild(card);
+        } else {
+          this.streamerGiftsGrid.appendChild(card);
+        }
+      });
+    }
+
+    // Fallback if legacy giftBar is present
+    if (this.giftBar) {
+      this.giftBar.innerHTML = '';
+      this.gifts.forEach((g) => {
+        const isEnemy = g.target === 'enemy' || g.target === 'heal_enemy';
+        const card = this.createGiftCardElement(g, isEnemy);
+        this.giftBar.appendChild(card);
+      });
+    }
+  }
+
+  // Trigger gift effect with target routing (Streamer vs Enemy Boss)
+  triggerGift(giftIdentifier, repeatCount = 1, username = 'Apoiador VIP', userAvatar = null) {
+    const gift = this.findGift(giftIdentifier);
+    const totalCoins = gift.coins * repeatCount;
+
+    // Play Throttled Gift Sound
+    audio.playGiftAlert(gift.coins >= 500 || repeatCount >= 20);
+
+    // Show on-screen popup alert with target indication
+    this.showGiftAlert(username, gift, repeatCount, userAvatar);
+
+    // Update Goal
+    if (gift.target === 'player') {
+      this.goal.current += repeatCount;
+      if (this.goal.current >= this.goal.target) {
+        this.goal.current = this.goal.target;
+      }
+      this.updateGoalUI();
+    }
+
+    // Update Leaderboard
+    const existing = this.topGifters.get(username) || { name: username, coins: 0, count: 0 };
+    existing.coins += totalCoins;
+    existing.count += repeatCount;
+    this.topGifters.set(username, existing);
+    this.updateLeaderboardUI();
+
+    // Determine Action Type & Target
+    const isEnemyAttack = gift.target === 'enemy';
+    const isPlayerHeal = gift.target === 'heal_player';
+    const isEnemyHeal = gift.target === 'heal_enemy';
+
+    if (isPlayerHeal) {
+      this.game.queueAction({ type: 'heal_player', amount: gift.damage * repeatCount });
+      return;
+    } else if (isEnemyHeal) {
+      this.game.queueAction({ type: 'heal_enemy', amount: gift.damage * repeatCount });
+      return;
+    }
+
+    // Attacks (Player or Enemy)
+    const actionType = isEnemyAttack ? 'enemy_punch' : 'player_punch';
+
+    if (repeatCount <= 4) {
+      for (let i = 0; i < repeatCount; i++) {
+        setTimeout(() => {
+          this.game.queueAction({
+            type: actionType,
+            punchType: gift.punchType || 'jab',
+            damage: gift.damage,
+            gifter: { username, giftName: gift.name, target: gift.target }
+          });
+        }, i * 85);
+      }
+    } else {
+      // 5+ to 100+ gifts: rapid combo flurry
+      const flurryHits = Math.min(8, Math.max(5, Math.floor(repeatCount / 4)));
+      const damagePerHit = Math.max(10, Math.round((gift.damage * repeatCount) / flurryHits));
+
+      for (let i = 0; i < flurryHits; i++) {
+        setTimeout(() => {
+          const isLast = i === flurryHits - 1;
+          this.game.queueAction({
+            type: actionType,
+            punchType: isLast ? 'uppercut' : (i % 2 === 0 ? 'jab' : 'cross'),
+            damage: damagePerHit,
+            gifter: { username, giftName: gift.name, target: gift.target, comboStreak: repeatCount }
+          });
+        }, i * 65);
+      }
+    }
+  }
+
+  showGiftAlert(username, gift, count, avatarUrl) {
+    if (!this.giftAlertContainer) return;
+
+    if (this.giftAlertContainer.children.length > 4) {
+      this.giftAlertContainer.firstElementChild.remove();
+    }
+
+    const isEnemyTarget = gift.target === 'enemy';
+    const alert = document.createElement('div');
+    alert.className = `live-gift-badge animate-slide-in ${isEnemyTarget ? 'alert-enemy-team' : 'alert-player-team'}`;
+    const avatar = avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${username}`;
+
+    let actionText = `enviou ${gift.name} ${gift.icon} (Ajudou Você!)`;
+    if (isEnemyTarget) {
+      actionText = `enviou ${gift.name} ${gift.icon} (Mandou o Boss bater!)`;
+    }
+
+    alert.innerHTML = `
+      <img src="${avatar}" class="gift-user-avatar" alt="${username}" />
+      <div class="gift-badge-info">
+        <span class="gift-user-name">@${username}</span>
+        <span class="gift-action-desc">${actionText}</span>
+      </div>
+      <span class="gift-streak-count">x${count}</span>
+    `;
+
+    this.giftAlertContainer.appendChild(alert);
+
+    setTimeout(() => {
+      alert.classList.add('fade-out');
+      setTimeout(() => alert.remove(), 350);
+    }, 2800);
+  }
+
+  updateGoalUI() {
+    if (this.goalProgressBar) {
+      const pct = Math.min(100, Math.round((this.goal.current / this.goal.target) * 100));
+      this.goalProgressBar.style.width = `${pct}%`;
+    }
+    if (this.goalCount) {
+      this.goalCount.textContent = `${this.goal.current} / ${this.goal.target}`;
+    }
+  }
+
+  updateLeaderboardUI() {
+    if (!this.leaderboardList) return;
+
+    const sorted = Array.from(this.topGifters.values())
+      .sort((a, b) => b.coins - a.coins)
+      .slice(0, 3);
+
+    this.leaderboardList.innerHTML = '';
+    const medals = ['🥇', '🥈', '🥉'];
+
+    if (sorted.length === 0) {
+      this.leaderboardList.innerHTML = '<li class="no-gifters">Aguardando presentes da live...</li>';
+      return;
+    }
+
+    sorted.forEach((g, index) => {
+      const li = document.createElement('li');
+      li.className = 'top-gifter-item';
+      li.innerHTML = `
+        <span class="rank-medal">${medals[index] || index + 1}</span>
+        <span class="gifter-name">@${g.name}</span>
+        <span class="gifter-coins">${g.coins} 🪙</span>
+      `;
+      this.leaderboardList.appendChild(li);
+    });
+  }
+
+  resetGoal() {
+    this.goal.current = 0;
+    this.updateGoalUI();
+  }
+
+  saveSettings() {
+    try {
+      localStorage.setItem('punch_boxing_gifts_rules_v2', JSON.stringify(this.gifts));
+    } catch (e) {
+      console.warn('Error saving gift rules', e);
+    }
+  }
+
+  loadSavedSettings() {
+    try {
+      const saved = localStorage.getItem('punch_boxing_gifts_rules_v2');
+      if (saved) {
+        const savedGifts = JSON.parse(saved);
+        this.gifts = this.defaultGifts.map((dg) => {
+          const found = savedGifts.find((sg) => sg.id === dg.id);
+          return found ? { ...dg, ...found } : dg;
+        });
+      } else {
+        this.gifts = JSON.parse(JSON.stringify(this.defaultGifts));
+      }
+    } catch (e) {
+      console.warn('Error loading gift rules', e);
+      this.gifts = JSON.parse(JSON.stringify(this.defaultGifts));
+    }
+  }
+
+  // Update gift rule by ID
+  updateGiftRule(giftId, newProperties) {
+    const gift = this.gifts.find((g) => g.id === giftId);
+    if (gift) {
+      Object.assign(gift, newProperties);
+      this.saveSettings();
+      this.renderGiftButtons();
+    }
+  }
+
+  // Add new custom gift
+  addCustomGift(newGift) {
+    this.gifts.push(newGift);
+    this.saveSettings();
+    this.renderGiftButtons();
+  }
+
+  // Restore defaults
+  restoreDefaults() {
+    this.gifts = JSON.parse(JSON.stringify(this.defaultGifts));
+    this.saveSettings();
+    this.renderGiftButtons();
+  }
+
+  toggleTikTokConnection() {
+    const username = this.usernameInput ? this.usernameInput.value.trim() : '';
+    const statusChip = document.getElementById('tiktok-status-chip');
+
+    if (!username) {
+      alert('Digite o seu @usuario da Live do TikTok!');
+      return;
+    }
+
+    if (this.isConnected) {
+      if (this.ws) this.ws.close();
+      this.isConnected = false;
+      if (this.connectBtn) this.connectBtn.textContent = 'Conectar Live';
+      if (statusChip) {
+        statusChip.textContent = 'Desconectado';
+        statusChip.style.color = '#ff5577';
+        statusChip.style.background = 'rgba(255, 0, 85, 0.15)';
+      }
+      return;
+    }
+
+    try {
+      this.ws = new WebSocket('ws://localhost:8081');
+
+      this.ws.onopen = () => {
+        this.isConnected = true;
+        if (this.connectBtn) this.connectBtn.textContent = 'Desconectar';
+        if (statusChip) {
+          statusChip.textContent = `🟢 Conectado em @${username}`;
+          statusChip.style.color = '#00ff88';
+          statusChip.style.background = 'rgba(0, 255, 136, 0.2)';
+        }
+        this.ws.send(JSON.stringify({ event: 'setUniqueId', uniqueId: username }));
+      };
+
+      this.ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.event === 'gift') {
+            const rawIdentifier = data.giftId || data.giftName || 'rose';
+            const matched = this.findGift(rawIdentifier);
+            this.triggerGift(matched.id, data.repeatCount || 1, data.nickname || data.uniqueId, data.profilePictureUrl);
+          } else if (data.event === 'like') {
+            this.game.playerAttack('jab', 5);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      };
+
+      this.ws.onerror = () => {
+        alert('Bridge local do TikTok não detectada na porta 8081.\n\nVocê pode usar normalmente através do TikFinity configurando as Teclas de Atalho (1, 2, 3, 4, 5, 6, R), ou adicionando o jogo como Fonte de Navegador no TikTok Live Studio!');
+        this.isConnected = false;
+        if (this.connectBtn) this.connectBtn.textContent = 'Conectar Live';
+        if (statusChip) {
+          statusChip.textContent = 'Pronto para Conectar (TikFinity / Webhook)';
+          statusChip.style.color = '#ffea00';
+          statusChip.style.background = 'rgba(255, 234, 0, 0.15)';
+        }
+      };
+    } catch (err) {
+      console.warn(err);
+    }
+  }
+}

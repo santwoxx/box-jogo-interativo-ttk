@@ -1,0 +1,535 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&family=Teko:wght@600;700&display=swap');
+
+:root {
+  --bg-dark: #080a10;
+  --panel-bg: rgba(14, 18, 28, 0.88);
+  --panel-border: rgba(255, 255, 255, 0.14);
+  --player-color: #00e5ff;
+  --player-glow: rgba(0, 229, 255, 0.4);
+  --enemy-color: #ff0055;
+  --enemy-glow: rgba(255, 0, 85, 0.4);
+  --gold: #ffea00;
+  --gold-glow: rgba(255, 234, 0, 0.4);
+  --font-main: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-heading: 'Teko', 'Impact', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+}
+
+body, html {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg-dark);
+  font-family: var(--font-main);
+  color: #ffffff;
+}
+
+#app {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* ================= 9:16 TIKTOK VERTICAL VS 16:9 PC MODE ================= */
+#game-canvas-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000000;
+  transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1);
+}
+
+#game-canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* Vertical 9:16 TikTok Live Studio Mode */
+body.aspect-vertical-tiktok #game-canvas-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+}
+
+body.aspect-vertical-tiktok #game-canvas {
+  max-width: 531px; /* 9:16 ratio on 945px height */
+  height: 100%;
+  border-left: 2px solid rgba(0, 229, 255, 0.2);
+  border-right: 2px solid rgba(255, 0, 85, 0.2);
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+}
+
+/* ================= TOP HUD (ULTRA-CLEAN FIGHTING BAR) ================= */
+#top-hud {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 960px;
+  padding: 10px 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.2) 70%, transparent 100%);
+}
+
+#top-hud-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.compact-fighter-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--panel-bg);
+  backdrop-filter: blur(12px);
+  padding: 6px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--panel-border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  flex: 1;
+  max-width: 380px;
+  pointer-events: auto;
+}
+
+.compact-fighter-card.player-card {
+  border-left: 3px solid var(--player-color);
+}
+
+.compact-fighter-card.enemy-card {
+  border-right: 3px solid var(--enemy-color);
+  flex-direction: row-reverse;
+  text-align: right;
+}
+
+.hud-avatar {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid #fff;
+  flex-shrink: 0;
+}
+
+.player-card .hud-avatar {
+  border-color: var(--player-color);
+  box-shadow: 0 0 10px var(--player-glow);
+}
+
+.enemy-card .hud-avatar {
+  border-color: var(--enemy-color);
+  box-shadow: 0 0 10px var(--enemy-glow);
+}
+
+.hud-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hud-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.hud-name-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.player-card .hud-name-row {
+  flex-direction: row;
+}
+
+.enemy-card .hud-name-row {
+  flex-direction: row-reverse;
+}
+
+.boxer-name {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.ko-badge {
+  background: rgba(255, 234, 0, 0.15);
+  color: var(--gold);
+  border: 1px solid rgba(255, 234, 0, 0.4);
+  font-size: 10px;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 12px;
+}
+
+.hp-bar-outer {
+  position: relative;
+  width: 100%;
+  height: 12px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.hp-bar-fill {
+  height: 100%;
+  width: 100%;
+  border-radius: 6px;
+  transition: width 0.2s cubic-bezier(0.1, 0.9, 0.2, 1);
+}
+
+.player-card .hp-bar-fill {
+  background: linear-gradient(90deg, #00b4d8, var(--player-color));
+  box-shadow: 0 0 8px var(--player-glow);
+}
+
+.enemy-card .hp-bar-fill {
+  background: linear-gradient(90deg, var(--enemy-color), #ff5500);
+  box-shadow: 0 0 8px var(--enemy-glow);
+}
+
+.hp-text {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Center Match Round / Timer */
+#match-center-hud {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--panel-bg);
+  backdrop-filter: blur(12px);
+  padding: 4px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--panel-border);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  pointer-events: auto;
+  min-width: 80px;
+}
+
+.round-title {
+  font-family: var(--font-heading);
+  font-size: 14px;
+  letter-spacing: 1px;
+  color: var(--gold);
+}
+
+.round-timer {
+  font-family: var(--font-heading);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  color: #ffffff;
+}
+
+/* ================= GUERRA DA LIVE (TUG-OF-WAR PROGRESS BAR) ================= */
+#live-war-container {
+  background: rgba(10, 14, 24, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 5px 12px;
+  border-radius: 10px;
+  pointer-events: auto;
+}
+
+.live-war-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.war-side-player {
+  color: var(--player-color);
+}
+
+.war-title {
+  color: var(--gold);
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+
+.war-side-enemy {
+  color: #ff5577;
+}
+
+.live-war-bar-outer {
+  width: 100%;
+  height: 8px;
+  background: #000;
+  border-radius: 4px;
+  display: flex;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.live-war-bar-player {
+  height: 100%;
+  background: linear-gradient(90deg, #0099cc, var(--player-color));
+  box-shadow: 0 0 6px var(--player-glow);
+  transition: width 0.3s ease;
+}
+
+.live-war-bar-enemy {
+  height: 100%;
+  background: linear-gradient(90deg, #ff5500, var(--enemy-color));
+  box-shadow: 0 0 6px var(--enemy-glow);
+  transition: width 0.3s ease;
+}
+
+/* ================= FLOATING GIFT ALERTS ================= */
+#gift-alert-container {
+  position: absolute;
+  top: 140px;
+  left: 20px;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.live-gift-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, rgba(0, 150, 255, 0.85), rgba(0, 40, 100, 0.85));
+  backdrop-filter: blur(10px);
+  border: 1.5px solid var(--player-color);
+  box-shadow: 0 0 20px var(--player-glow);
+  padding: 6px 14px;
+  border-radius: 30px;
+  animation: slideInLeft 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+}
+
+.live-gift-badge.alert-enemy-team {
+  background: linear-gradient(135deg, rgba(200, 0, 50, 0.85), rgba(80, 0, 20, 0.85));
+  border-color: #ff5577;
+  box-shadow: 0 0 20px rgba(255, 0, 85, 0.6);
+}
+
+.gift-user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid #ffffff;
+}
+
+.gift-badge-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.gift-user-name {
+  font-weight: 800;
+  font-size: 12px;
+  color: #ffffff;
+}
+
+.gift-action-desc {
+  font-size: 11px;
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.gift-streak-count {
+  font-family: var(--font-heading);
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--gold);
+  margin-left: 6px;
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-60px) scale(0.85); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+.live-gift-badge.fade-out {
+  opacity: 0;
+  transform: translateY(-15px) scale(0.9);
+  transition: all 0.3s ease;
+}
+
+/* Top Right Settings Hub Trigger Button */
+.stream-settings-gear-btn {
+  background: var(--panel-bg);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--panel-border);
+  color: #ffffff;
+  font-family: var(--font-main);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  transition: all 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+.stream-settings-gear-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: var(--gold);
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 6px 20px rgba(255, 234, 0, 0.3);
+}
+
+.stream-settings-gear-btn:active {
+  transform: scale(0.96);
+}
+
+.gear-icon {
+  font-size: 15px;
+  display: inline-block;
+  transition: transform 0.4s ease;
+}
+
+.stream-settings-gear-btn:hover .gear-icon {
+  transform: rotate(90deg);
+}
+
+/* ================= CLEAN STREAM MODE (FOR OBS & TIKTOK LIVE STUDIO) ================= */
+#floating-show-ui-btn {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 100;
+  display: none;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}
+
+#floating-show-ui-btn:hover {
+  opacity: 1;
+}
+
+body.clean-stream-mode #live-war-container,
+body.clean-stream-mode #btn-open-settings-hub {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+body.clean-stream-mode:hover #live-war-container,
+body.clean-stream-mode:hover #btn-open-settings-hub {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+body.clean-stream-mode #floating-show-ui-btn {
+  display: block;
+}
+
+/* ================= CLEAN STREAM MODE (FOR OBS & TIKTOK LIVE STUDIO) ================= */
+#floating-show-ui-btn {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 100;
+  display: none;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}
+
+#floating-show-ui-btn:hover {
+  opacity: 1;
+}
+
+body.clean-stream-mode #live-gift-legend,
+body.clean-stream-mode #live-war-container,
+body.clean-stream-mode #btn-open-settings-hub {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+body.clean-stream-mode:hover #live-gift-legend,
+body.clean-stream-mode:hover #live-war-container,
+body.clean-stream-mode:hover #btn-open-settings-hub {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+body.clean-stream-mode #floating-show-ui-btn {
+  display: block;
+}
+
+/* Toast Notifications */
+.game-toast {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-40px);
+  background: rgba(14, 20, 32, 0.95);
+  border: 1px solid var(--player-color);
+  color: #ffffff;
+  padding: 10px 24px;
+  border-radius: 30px;
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: 0 8px 32px rgba(0, 229, 255, 0.4);
+  z-index: 999;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+.game-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
