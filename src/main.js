@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const enemyAvatarPreview = document.getElementById('enemy-avatar-preview');
 
   const roundText = document.getElementById('round-text');
-  const roundTimerText = document.getElementById('round-timer-text');
+  const roundStatusText = document.getElementById('round-status-text');
 
   // Guerra da Live Elements
   const warPlayerBar = document.getElementById('war-player-bar');
@@ -61,9 +61,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (enemyHpText) enemyHpText.textContent = `${Math.round(game.enemy.hp)} / ${game.enemy.maxHp} HP`;
     if (enemyKoBadge) enemyKoBadge.textContent = `K.O: ${game.enemy.koCount}`;
 
-    // Round & Timer
+    // Round & Battle Status
     if (roundText) roundText.textContent = `ROUND ${game.round}`;
-    if (roundTimerText) roundTimerText.textContent = `${game.roundTime}`;
+    if (roundStatusText) {
+      if (game.matchStatus === 'KO') {
+        roundStatusText.textContent = '💥 K.O.!';
+        roundStatusText.style.color = '#ffea00';
+      } else {
+        roundStatusText.textContent = '⚔️ VS ⚔️';
+        roundStatusText.style.color = '#ffffff';
+      }
+    }
 
     // Avatars
     if (game.player.headConfig.src && playerAvatarPreview && playerAvatarPreview.src !== game.player.headConfig.src) {

@@ -223,34 +223,38 @@ body.aspect-vertical-tiktok #game-canvas {
   color: rgba(255, 255, 255, 0.7);
 }
 
-/* Center Match Round / Timer */
+/* Center Match Round / Status Badge (No countdown timer) */
 #match-center-hud {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   background: var(--panel-bg);
   backdrop-filter: blur(12px);
-  padding: 4px 14px;
+  padding: 4px 16px;
   border-radius: 14px;
   border: 1px solid var(--panel-border);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
   pointer-events: auto;
-  min-width: 80px;
+  min-width: 90px;
 }
 
 .round-title {
   font-family: var(--font-heading);
-  font-size: 14px;
+  font-size: 13px;
   letter-spacing: 1px;
   color: var(--gold);
+  text-transform: uppercase;
+  line-height: 1.1;
 }
 
-.round-timer {
+.round-status-badge {
   font-family: var(--font-heading);
-  font-size: 28px;
-  font-weight: 700;
-  line-height: 1;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.1;
   color: #ffffff;
+  letter-spacing: 1px;
 }
 
 /* ================= GUERRA DA LIVE (TUG-OF-WAR PROGRESS BAR) ================= */

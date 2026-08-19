@@ -37,11 +37,9 @@ export class GameEngine {
       headSrc: '/assets/faces/Dona.png'
     });
 
-    // Game Match State
+    // Game Match State (Infinite Battle until full K.O.)
     this.round = 1;
-    this.roundTime = 99;
-    this.timerInterval = null;
-    this.matchStatus = 'READY'; // READY, FIGHTING, KO, ROUND_OVER
+    this.matchStatus = 'READY'; // READY, FIGHTING, KO
     this.comboCount = 0;
     this.comboTimer = 0;
     this.lastAttacker = null;
@@ -98,22 +96,8 @@ export class GameEngine {
   start() {
     this.isRunning = true;
     this.matchStatus = 'FIGHTING';
-    this.startRoundTimer();
     audio.playGong();
     this.loop(performance.now());
-  }
-
-  startRoundTimer() {
-    if (this.timerInterval) clearInterval(this.timerInterval);
-    this.timerInterval = setInterval(() => {
-      if (this.matchStatus === 'FIGHTING' && this.roundTime > 0) {
-        this.roundTime--;
-        if (this.roundTime <= 0) {
-          this.endRoundByTime();
-        }
-        if (this.onUIUpdate) this.onUIUpdate();
-      }
-    }, 1000);
   }
 
   addTrauma(amount) {
@@ -285,7 +269,7 @@ export class GameEngine {
   handleKO(winner, loser, gifterInfo = null) {
     this.matchStatus = 'KO';
     audio.playKOFanfare();
-    this.particles.spawnConfetti(this.width, this.height, 100);
+    this.particles.spawnConfetti(this.width, this.height, 120);
 
     if (this.onKOCallback) {
       this.onKOCallback({
@@ -297,6 +281,14 @@ export class GameEngine {
     }
 
     if (this.onUIUpdate) this.onUIUpdate();
+
+    // Auto next round after 5 seconds of KO celebration
+    const currentSession = this.matchSessionId;
+    setTimeout(() => {
+      if (this.matchSessionId === currentSession && this.matchStatus === 'KO') {
+        this.resetMatch(true);
+      }
+    }, 5000);
   }
 
   resetMatch(nextRound = false) {
@@ -309,7 +301,6 @@ export class GameEngine {
       this.enemy.koCount = 0;
     }
 
-    this.roundTime = 99;
     this.matchStatus = 'FIGHTING';
     this.comboCount = 0;
     this.actionQueue = [];
@@ -318,12 +309,6 @@ export class GameEngine {
     this.particles.clear();
     audio.playGong();
 
-    if (this.onUIUpdate) this.onUIUpdate();
-  }
-
-  endRoundByTime() {
-    this.matchStatus = 'ROUND_OVER';
-    audio.playGong();
     if (this.onUIUpdate) this.onUIUpdate();
   }
 
