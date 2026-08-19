@@ -16,24 +16,27 @@ export class TikTokManager {
     // Leaderboard
     this.topGifters = new Map();
 
-    // Official TikTok Live Gifts Catalog (Exact names, real coins and official icons - 2,000 Roses = 20k HP K.O.)
+    // Official TikTok Live Gifts Catalog - Ordered from lowest to highest coin value with punch progression
     this.defaultGifts = [
-      // Streamer Team Gifts (Ajudam o Streamer a bater no Boss)
+      // ================= TIME YURI (AJUDAR STREAMER A BATER NO BOSS) =================
       { id: 'rose', name: 'Rosa', coins: 1, icon: '🌹', target: 'player', punchType: 'jab', damage: 10, aliases: ['rose', 'rosa', '5655'] },
       { id: 'tiktok', name: 'TikTok', coins: 1, icon: '🎵', target: 'player', punchType: 'jab', damage: 10, aliases: ['tiktok', 'tiktok logo', '5269'] },
-      { id: 'panda', name: 'Mini Panda', coins: 5, icon: '🐼', target: 'player', punchType: 'jab', damage: 50, aliases: ['panda', 'mini panda', '5487'] },
+      { id: 'panda', name: 'Mini Panda', coins: 5, icon: '🐼', target: 'player', punchType: 'cross', damage: 50, aliases: ['panda', 'mini panda', '5487'] },
       { id: 'heart', name: 'Heart Me', coins: 10, icon: '💖', target: 'player', punchType: 'cross', damage: 120, aliases: ['heart', 'heart me', 'coração', '5760'] },
+      { id: 'popcorn', name: 'Pipoca', coins: 99, icon: '🍿', target: 'player', punchType: 'hook', damage: 1200, aliases: ['popcorn', 'pipoca', '5656'] },
       { id: 'sunglasses', name: 'Óculos de Sol', coins: 199, icon: '🕶️', target: 'player', punchType: 'hook', damage: 2400, aliases: ['sunglasses', 'oculos', 'óculos', '5657'] },
+      { id: 'gloves', name: 'Luvas de Boxe', coins: 299, icon: '🥊', target: 'player', punchType: 'uppercut', damage: 3600, aliases: ['boxing gloves', 'gloves', 'luva', 'luvas'] },
       { id: 'moneygun', name: 'Money Gun', coins: 500, icon: '🔫', target: 'player', punchType: 'uppercut', damage: 6000, aliases: ['moneygun', 'money gun', 'pistola de dinheiro', '5650'] },
       { id: 'galaxy', name: 'Galáxia', coins: 1000, icon: '🌌', target: 'player', punchType: 'super', damage: 12000, aliases: ['galaxy', 'galaxia', 'galáxia', '5659'] },
       { id: 'universe', name: 'Universo TikTok', coins: 34999, icon: '✨', target: 'player', punchType: 'super', damage: 20000, aliases: ['universe', 'universo', 'tiktok universe', '5844'] },
 
-      // Enemy Team Gifts (Ajudam o Boss / Trollar o Streamer)
+      // ================= TIME DONA (BOSS / BATER NO STREAMER) =================
       { id: 'icecream', name: 'Casquinha', coins: 1, icon: '🍦', target: 'enemy', punchType: 'jab', damage: 10, aliases: ['ice cream', 'icecream', 'casquinha', 'sorvete', '5879'] },
-      { id: 'doughnut', name: 'Rosquinha', coins: 30, icon: '🍩', target: 'enemy', punchType: 'jab', damage: 350, aliases: ['doughnut', 'donut', 'rosquinha', '5827'] },
-      { id: 'duck', name: 'Patinho', coins: 50, icon: '🦆', target: 'enemy', punchType: 'jab', damage: 600, aliases: ['duck', 'pato', 'patinho', '5828'] },
+      { id: 'highfive', name: 'Toca Aqui', coins: 10, icon: '🖐️', target: 'enemy', punchType: 'cross', damage: 120, aliases: ['high five', 'highfive', 'toca aqui'] },
+      { id: 'doughnut', name: 'Rosquinha', coins: 30, icon: '🍩', target: 'enemy', punchType: 'cross', damage: 350, aliases: ['doughnut', 'donut', 'rosquinha', '5827'] },
+      { id: 'duck', name: 'Patinho', coins: 50, icon: '🦆', target: 'enemy', punchType: 'hook', damage: 600, aliases: ['duck', 'pato', 'patinho', '5828'] },
       { id: 'cap', name: 'Boné GG', coins: 99, icon: '🧢', target: 'enemy', punchType: 'hook', damage: 1200, aliases: ['cap', 'bone', 'boné', 'cap and mustache', '5658'] },
-      { id: 'corgi', name: 'Corgi Dog', coins: 299, icon: '🐶', target: 'enemy', punchType: 'hook', damage: 3600, aliases: ['corgi', 'dog', 'cachorro'] },
+      { id: 'corgi', name: 'Corgi Dog', coins: 299, icon: '🐶', target: 'enemy', punchType: 'uppercut', damage: 3600, aliases: ['corgi', 'dog', 'cachorro'] },
       { id: 'whale', name: 'Baleia', coins: 2150, icon: '🐳', target: 'enemy', punchType: 'uppercut', damage: 14000, aliases: ['whale', 'baleia', 'whale diving'] },
       { id: 'car', name: 'Carro Esportivo', coins: 7000, icon: '🏎️', target: 'enemy', punchType: 'super', damage: 18000, aliases: ['car', 'carro', 'sports car'] },
       { id: 'falcon', name: 'Falcão', coins: 10999, icon: '🦅', target: 'enemy', punchType: 'super', damage: 20000, aliases: ['falcon', 'falcao', 'falcão'] },
@@ -436,7 +439,7 @@ export class TikTokManager {
 
   saveSettings() {
     try {
-      localStorage.setItem('punch_boxing_gifts_rules_v4', JSON.stringify(this.gifts));
+      localStorage.setItem('punch_boxing_gifts_rules_v5', JSON.stringify(this.gifts));
     } catch (e) {
       console.warn('Error saving gift rules', e);
     }
@@ -444,7 +447,7 @@ export class TikTokManager {
 
   loadSavedSettings() {
     try {
-      const saved = localStorage.getItem('punch_boxing_gifts_rules_v4');
+      const saved = localStorage.getItem('punch_boxing_gifts_rules_v5');
       if (saved) {
         const savedGifts = JSON.parse(saved);
         this.gifts = this.defaultGifts.map((dg) => {
