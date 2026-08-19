@@ -422,49 +422,8 @@ export class TikTokManager {
       statusChip.style.background = 'rgba(255, 234, 0, 0.15)';
     }
 
-    try {
-      this.ws = new WebSocket('ws://localhost:8081');
-
-      this.ws.onopen = () => {
-        this.isConnected = true;
-        if (this.connectBtn) this.connectBtn.textContent = 'Desconectar';
-        if (statusChip) {
-          statusChip.textContent = `🟢 Conectado ao Bridge! Aguardando @${username}...`;
-          statusChip.style.color = '#00ff88';
-          statusChip.style.background = 'rgba(0, 255, 136, 0.2)';
-        }
-        this.ws.send(JSON.stringify({ event: 'setUniqueId', uniqueId: username }));
-      };
-
-      this.ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-
-          if (data.event === 'connected') {
-            if (statusChip) {
-              statusChip.textContent = `🔴 AO VIVO em @${data.username}`;
-              statusChip.style.color = '#00ff88';
-              statusChip.style.background = 'rgba(0, 255, 136, 0.25)';
-            }
-          } else if (data.event === 'gift') {
-            const rawIdentifier = data.giftId || data.giftName || 'rose';
-            const matched = this.findGift(rawIdentifier);
-            this.triggerGift(matched.id, data.repeatCount || 1, data.nickname || data.uniqueId, data.profilePictureUrl);
-          } else if (data.event === 'like') {
-            this.game.playerAttack('jab', 5);
-          } else if (data.event === 'error') {
-            if (statusChip) {
-              statusChip.textContent = `⚠️ Live Offline (@${username})`;
-              statusChip.style.color = '#ff9900';
-              statusChip.style.background = 'rgba(255, 153, 0, 0.15)';
-            }
-          }
-        } catch (e) {
-          console.error(e);
-        }
-      };
-
-      this.ws.onerror = () => {
+    const tryConnect = (urls, index = 0) => {
+      if (index >= urls.length) {
         alert('Bridge local do TikTok não detectada na porta 8081.\n\nPara conectar automaticamente via live, certifique-se de executar no terminal:\n npm run bridge\n\nOu utilize o TikFinity com as teclas de atalho (1, 2, 3, 4, 5, R)!');
         this.isConnected = false;
         if (this.connectBtn) this.connectBtn.textContent = 'Conectar Live';
@@ -473,19 +432,75 @@ export class TikTokManager {
           statusChip.style.color = '#ff5577';
           statusChip.style.background = 'rgba(255, 0, 85, 0.15)';
         }
-      };
+        return;
+      }
 
-      this.ws.onclose = () => {
-        this.isConnected = false;
-        if (this.connectBtn) this.connectBtn.textContent = 'Conectar Live';
-        if (statusChip) {
-          statusChip.textContent = 'Desconectado';
-          statusChip.style.color = '#ff5577';
-          statusChip.style.background = 'rgba(255, 0, 85, 0.15)';
-        }
-      };
-    } catch (err) {
-      console.warn(err);
-    }
+      const url = urls[index];
+      try {
+        const ws = new WebSocket(url);
+        this.ws = ws;
+
+        ws.onopen = () => {
+          this.isConnected = true;
+          if (this.connectBtn) this.connectBtn.textContent = 'Desconectar';
+          if (statusChip) {
+            statusChip.textContent = `🟢 Conectado ao Bridge! Aguardando @${username}...`;
+            statusChip.style.color = '#00ff88';
+            statusChip.style.background = 'rgba(0, 255, 136, 0.2)';
+          }
+          ws.send(JSON.stringify({ event: 'setUniqueId', uniqueId: username }));
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+
+            if (data.event === 'connected') {
+              if (statusChip) {
+                statusChip.textContent = `🔴 AO VIVO em @${data.username}`;
+                statusChip.style.color = '#00ff88';
+                statusChip.style.background = 'rgba(0, 255, 136, 0.25)';
+              }
+            } else if (data.event === 'gift') {
+              const rawIdentifier = data.giftId || data.giftName || 'rose';
+              const matched = this.findGift(rawIdentifier);
+              this.triggerGift(matched.id, data.repeatCount || 1, data.nickname || data.uniqueId, data.profilePictureUrl);
+            } else if (data.event === 'like') {
+              this.game.playerAttack('jab', 5);
+            } else if (data.event === 'error') {
+              if (statusChip) {
+                statusChip.textContent = `⚠️ Live Offline (@${username})`;
+                statusChip.style.color = '#ff9900';
+                statusChip.style.background = 'rgba(255, 153, 0, 0.15)';
+              }
+            }
+          } catch (e) {
+            console.error(e);
+          }
+        };
+
+        ws.onerror = () => {
+          if (!this.isConnected) {
+            tryConnect(urls, index + 1);
+          }
+        };
+
+        ws.onclose = () => {
+          if (this.isConnected) {
+            this.isConnected = false;
+            if (this.connectBtn) this.connectBtn.textContent = 'Conectar Live';
+            if (statusChip) {
+              statusChip.textContent = 'Desconectado';
+              statusChip.style.color = '#ff5577';
+              statusChip.style.background = 'rgba(255, 0, 85, 0.15)';
+            }
+          }
+        };
+      } catch (err) {
+        tryConnect(urls, index + 1);
+      }
+    };
+
+    tryConnect(['ws://localhost:8081', 'ws://127.0.0.1:8081']);
   }
 }

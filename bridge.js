@@ -2,7 +2,26 @@ import { WebcastPushConnection } from 'tiktok-live-connector';
 import { WebSocketServer } from 'ws';
 
 const PORT = 8081;
-const wss = new WebSocketServer({ port: PORT });
+let wss;
+
+try {
+  wss = new WebSocketServer({ port: PORT });
+} catch (err) {
+  if (err.code === 'EADDRINUSE') {
+    console.log(`\n⚠️ ATENÇÃO: O Bridge já está rodando em outro terminal na porta ${PORT}!\nVocê já pode abrir o jogo no navegador e clicar em "Conectar Live".\n`);
+    process.exit(0);
+  }
+  throw err;
+}
+
+wss.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.log(`\n⚠️ ATENÇÃO: O Bridge já está rodando em outro terminal na porta ${PORT}!\nVocê já pode abrir o jogo no navegador e clicar em "Conectar Live".\n`);
+    process.exit(0);
+  } else {
+    console.error('Erro no servidor WebSocket:', err);
+  }
+});
 
 let tiktokLiveConnection = null;
 let currentUniqueId = null;
