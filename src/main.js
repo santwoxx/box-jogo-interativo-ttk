@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Load saved configurations
   faceCustomizer.loadSavedProfiles();
+  game.loadSavedFightersConfig();
 
   // HUD Elements
   const playerNameDisplay = document.getElementById('player-name-display');
@@ -329,8 +330,8 @@ document.addEventListener('DOMContentLoaded', () => {
   saveBattleRulesBtn?.addEventListener('click', () => {
     const pName = playerNameInput?.value.trim() || 'STREAMER';
     const eName = enemyNameInput?.value.trim() || 'BOSS FIGHTER';
-    const pMaxHp = parseInt(playerMaxHpInput?.value, 10) || 1000;
-    const eMaxHp = parseInt(enemyMaxHpInput?.value, 10) || 1000;
+    const pMaxHp = parseInt(playerMaxHpInput?.value, 10) || 10000;
+    const eMaxHp = parseInt(enemyMaxHpInput?.value, 10) || 10000;
 
     game.setFightersConfig({
       playerName: pName,

@@ -389,11 +389,12 @@
                 <label style="color: var(--player-color); font-weight: 800;">👤 Nome do Streamer (Você):</label>
                 <input type="text" id="player-name-input" class="custom-text-input" value="STREAMER" />
                 <label style="color: var(--player-color); margin-top: 6px;">❤️ Vida Máxima (HP):</label>
-                <input type="number" id="player-max-hp-input" class="custom-text-input" value="1000" min="100" max="100000" step="100" />
-                <div style="display: flex; gap: 6px; margin-top: 6px;">
-                  <button class="preset-chip btn-hp-preset" data-target="player" data-val="500">500 HP</button>
-                  <button class="preset-chip btn-hp-preset" data-target="player" data-val="1000">1.000 HP</button>
-                  <button class="preset-chip btn-hp-preset" data-target="player" data-val="2500">2.500 HP</button>
+                <input type="number" id="player-max-hp-input" class="custom-text-input" value="10000" min="100" max="1000000" step="1000" />
+                <div style="display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;">
+                  <button class="preset-chip btn-hp-preset" data-target="player" data-val="5000">5.000 HP</button>
+                  <button class="preset-chip btn-hp-preset" data-target="player" data-val="10000">10.000 HP ⭐</button>
+                  <button class="preset-chip btn-hp-preset" data-target="player" data-val="25000">25.000 HP</button>
+                  <button class="preset-chip btn-hp-preset" data-target="player" data-val="50000">50k HP</button>
                 </div>
               </div>
 
@@ -401,12 +402,12 @@
                 <label style="color: var(--enemy-color); font-weight: 800;">👹 Nome do Adversário / Boss:</label>
                 <input type="text" id="enemy-name-input" class="custom-text-input" value="BOSS FIGHTER" />
                 <label style="color: var(--enemy-color); margin-top: 6px;">❤️ Vida Máxima (HP):</label>
-                <input type="number" id="enemy-max-hp-input" class="custom-text-input" value="1000" min="100" max="100000" step="100" />
+                <input type="number" id="enemy-max-hp-input" class="custom-text-input" value="10000" min="100" max="1000000" step="1000" />
                 <div style="display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;">
-                  <button class="preset-chip btn-hp-preset" data-target="enemy" data-val="1000">1.000 HP</button>
-                  <button class="preset-chip btn-hp-preset" data-target="enemy" data-val="5000">5.000 HP</button>
-                  <button class="preset-chip btn-hp-preset" data-target="enemy" data-val="10000">10k Boss</button>
-                  <button class="preset-chip btn-hp-preset" data-target="enemy" data-val="25000">25k Raid</button>
+                  <button class="preset-chip btn-hp-preset" data-target="enemy" data-val="10000">10k Normal ⭐</button>
+                  <button class="preset-chip btn-hp-preset" data-target="enemy" data-val="25000">25k Boss</button>
+                  <button class="preset-chip btn-hp-preset" data-target="enemy" data-val="50000">50k Raid</button>
+                  <button class="preset-chip btn-hp-preset" data-target="enemy" data-val="100000">100k Titã</button>
                 </div>
               </div>
             </div>
