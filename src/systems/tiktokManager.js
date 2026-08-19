@@ -97,6 +97,32 @@ export class TikTokManager {
     }
 
     this.updateLegendNames();
+
+    // Auto-connect if on local HTTP
+    if (window.location.protocol === 'http:') {
+      setTimeout(() => {
+        if (!this.isConnected) {
+          this.toggleTikTokConnection();
+        }
+      }, 500);
+    } else if (window.location.protocol === 'https:') {
+      this.showHttpsWarning();
+    }
+  }
+
+  showHttpsWarning() {
+    const statusChip = document.getElementById('tiktok-status-chip');
+    if (statusChip) {
+      statusChip.textContent = '⚠️ Abra em http://localhost:8081';
+      statusChip.style.color = '#ffea00';
+      statusChip.style.background = 'rgba(255, 234, 0, 0.2)';
+    }
+
+    console.warn(
+      '⚠️ ATENÇÃO PARA A LIVE: Navegadores bloqueiam conexões WebSocket locais (ws://localhost) quando carregados em páginas HTTPS (Vercel).\n' +
+      '👉 Para receber os presentes da sua Live automaticamente, abra o jogo no navegador em:\n' +
+      'http://localhost:8081 ou http://localhost:5173'
+    );
   }
 
   updateLegendNames() {
