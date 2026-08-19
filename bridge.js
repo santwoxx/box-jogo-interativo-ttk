@@ -59,58 +59,69 @@ const server = http.createServer((req, res) => {
   const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const reqPath = parsedUrl.pathname;
 
-  // 1. Webhook endpoint for TikFinity (POST /gift or /api/gift)
-  if (req.method === 'POST' && (reqPath === '/gift' || reqPath === '/api/gift')) {
-    let body = '';
-    req.on('data', (chunk) => { body += chunk; });
-    req.on('end', () => {
-      try {
-        const data = JSON.parse(body || '{}');
-        const giftName = data.giftName || data.name || data.gift || 'Rosa';
-        const repeatCount = parseInt(data.repeatCount || data.count || data.amount || 1, 10);
-        const uniqueId = data.uniqueId || data.username || data.user || 'TikFinity_Live';
+  // 1. Universal Webhook endpoint for TikFinity (GET & POST /gift, /api/gift, /trigger)
+  if (reqPath === '/gift' || reqPath === '/api/gift' || reqPath === '/trigger' || reqPath === '/api/trigger') {
+    const handleGiftPayload = (data) => {
+      const giftName =
+        data.giftName ||
+        data.gift_name ||
+        data.name ||
+        data.gift ||
+        parsedUrl.searchParams.get('gift') ||
+        parsedUrl.searchParams.get('giftName') ||
+        'Rosa';
 
-        console.log(`🎁 [WEBHOOK/TIKFINITY] @${uniqueId} enviou ${repeatCount}x ${giftName}!`);
+      const repeatCount = parseInt(
+        data.repeatCount ||
+        data.repeat_count ||
+        data.count ||
+        data.amount ||
+        parsedUrl.searchParams.get('count') ||
+        1,
+        10
+      );
 
-        broadcast({
-          event: 'gift',
-          uniqueId: uniqueId,
-          nickname: uniqueId,
-          giftId: String(data.giftId || '5655'),
-          giftName: giftName,
-          repeatCount: repeatCount
-        });
+      const uniqueId =
+        data.uniqueId ||
+        data.username ||
+        data.user ||
+        parsedUrl.searchParams.get('user') ||
+        'TikFinity_Live';
 
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, gift: giftName, count: repeatCount }));
-      } catch (err) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: err.message }));
-      }
-    });
-    return;
-  }
+      console.log(`🎁 [TIKFINITY WEBHOOK] @${uniqueId} enviou ${repeatCount}x ${giftName}!`);
 
-  // 2. Instant URL Trigger (GET /trigger?gift=rose&count=5)
-  if (req.method === 'GET' && (reqPath === '/trigger' || reqPath === '/api/trigger')) {
-    const giftName = parsedUrl.searchParams.get('gift') || 'rose';
-    const repeatCount = parseInt(parsedUrl.searchParams.get('count') || '1', 10);
-    const uniqueId = parsedUrl.searchParams.get('user') || 'Teste_Navegador';
+      broadcast({
+        event: 'gift',
+        uniqueId: uniqueId,
+        nickname: uniqueId,
+        giftId: String(data.giftId || giftName),
+        giftName: giftName,
+        repeatCount: repeatCount
+      });
 
-    console.log(`🎁 [TESTE VIA URL] @${uniqueId} disparou ${repeatCount}x ${giftName}!`);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, gift: giftName, count: repeatCount }));
+    };
 
-    broadcast({
-      event: 'gift',
-      uniqueId: uniqueId,
-      nickname: uniqueId,
-      giftId: giftName,
-      giftName: giftName,
-      repeatCount: repeatCount
-    });
-
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ success: true, message: `Disparado ${repeatCount}x ${giftName} com sucesso!` }));
-    return;
+    if (req.method === 'POST') {
+      let body = '';
+      req.on('data', (chunk) => { body += chunk; });
+      req.on('end', () => {
+        let data = {};
+        try {
+          data = JSON.parse(body || '{}');
+        } catch (e) {
+          try {
+            data = Object.fromEntries(new URLSearchParams(body));
+          } catch (e2) {}
+        }
+        handleGiftPayload(data);
+      });
+      return;
+    } else {
+      handleGiftPayload(Object.fromEntries(parsedUrl.searchParams));
+      return;
+    }
   }
 
   // 3. Static Game Files Serving
