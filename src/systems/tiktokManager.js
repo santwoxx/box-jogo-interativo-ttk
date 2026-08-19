@@ -85,6 +85,11 @@ export class TikTokManager {
     this.connectBtn = document.getElementById('tiktok-connect-btn');
     this.usernameInput = document.getElementById('tiktok-username-input');
 
+    if (this.usernameInput) {
+      const savedUser = localStorage.getItem('punch_tiktok_username') || 'codeconnectofc';
+      this.usernameInput.value = savedUser;
+    }
+
     if (this.connectBtn) {
       this.connectBtn.addEventListener('click', () => this.toggleTikTokConnection());
     }
@@ -389,13 +394,15 @@ export class TikTokManager {
   }
 
   toggleTikTokConnection() {
-    const username = this.usernameInput ? this.usernameInput.value.trim() : '';
+    const username = this.usernameInput ? this.usernameInput.value.replace('@', '').trim() : 'codeconnectofc';
     const statusChip = document.getElementById('tiktok-status-chip');
 
     if (!username) {
       alert('Digite o seu @usuario da Live do TikTok!');
       return;
     }
+
+    localStorage.setItem('punch_tiktok_username', username);
 
     if (this.isConnected) {
       if (this.ws) this.ws.close();
@@ -409,6 +416,12 @@ export class TikTokManager {
       return;
     }
 
+    if (statusChip) {
+      statusChip.textContent = `⏳ Conectando em @${username}...`;
+      statusChip.style.color = '#ffea00';
+      statusChip.style.background = 'rgba(255, 234, 0, 0.15)';
+    }
+
     try {
       this.ws = new WebSocket('ws://localhost:8081');
 
@@ -416,7 +429,7 @@ export class TikTokManager {
         this.isConnected = true;
         if (this.connectBtn) this.connectBtn.textContent = 'Desconectar';
         if (statusChip) {
-          statusChip.textContent = `🟢 Conectado em @${username}`;
+          statusChip.textContent = `🟢 Conectado ao Bridge! Aguardando @${username}...`;
           statusChip.style.color = '#00ff88';
           statusChip.style.background = 'rgba(0, 255, 136, 0.2)';
         }
@@ -426,12 +439,25 @@ export class TikTokManager {
       this.ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          if (data.event === 'gift') {
+
+          if (data.event === 'connected') {
+            if (statusChip) {
+              statusChip.textContent = `🔴 AO VIVO em @${data.username}`;
+              statusChip.style.color = '#00ff88';
+              statusChip.style.background = 'rgba(0, 255, 136, 0.25)';
+            }
+          } else if (data.event === 'gift') {
             const rawIdentifier = data.giftId || data.giftName || 'rose';
             const matched = this.findGift(rawIdentifier);
             this.triggerGift(matched.id, data.repeatCount || 1, data.nickname || data.uniqueId, data.profilePictureUrl);
           } else if (data.event === 'like') {
             this.game.playerAttack('jab', 5);
+          } else if (data.event === 'error') {
+            if (statusChip) {
+              statusChip.textContent = `⚠️ Live Offline (@${username})`;
+              statusChip.style.color = '#ff9900';
+              statusChip.style.background = 'rgba(255, 153, 0, 0.15)';
+            }
           }
         } catch (e) {
           console.error(e);
@@ -439,13 +465,23 @@ export class TikTokManager {
       };
 
       this.ws.onerror = () => {
-        alert('Bridge local do TikTok não detectada na porta 8081.\n\nVocê pode usar normalmente através do TikFinity configurando as Teclas de Atalho (1, 2, 3, 4, 5, 6, R), ou adicionando o jogo como Fonte de Navegador no TikTok Live Studio!');
+        alert('Bridge local do TikTok não detectada na porta 8081.\n\nPara conectar automaticamente via live, certifique-se de executar no terminal:\n npm run bridge\n\nOu utilize o TikFinity com as teclas de atalho (1, 2, 3, 4, 5, R)!');
         this.isConnected = false;
         if (this.connectBtn) this.connectBtn.textContent = 'Conectar Live';
         if (statusChip) {
-          statusChip.textContent = 'Pronto para Conectar (TikFinity / Webhook)';
-          statusChip.style.color = '#ffea00';
-          statusChip.style.background = 'rgba(255, 234, 0, 0.15)';
+          statusChip.textContent = 'Bridge Desconectada (Inicie: npm run bridge)';
+          statusChip.style.color = '#ff5577';
+          statusChip.style.background = 'rgba(255, 0, 85, 0.15)';
+        }
+      };
+
+      this.ws.onclose = () => {
+        this.isConnected = false;
+        if (this.connectBtn) this.connectBtn.textContent = 'Conectar Live';
+        if (statusChip) {
+          statusChip.textContent = 'Desconectado';
+          statusChip.style.color = '#ff5577';
+          statusChip.style.background = 'rgba(255, 0, 85, 0.15)';
         }
       };
     } catch (err) {

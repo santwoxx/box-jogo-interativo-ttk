@@ -5,8 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port 5173 --host",
+    "bridge": "node bridge.js",
+    "start": "node bridge.js",
     "build": "vite build",
     "preview": "vite preview"
+  },
+  "dependencies": {
+    "tiktok-live-connector": "^1.2.0",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "vite": "^5.4.2"
