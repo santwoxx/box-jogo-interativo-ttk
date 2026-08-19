@@ -38,6 +38,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Guerra da Live Elements
   const warPlayerBar = document.getElementById('war-player-bar');
   const warEnemyBar = document.getElementById('war-enemy-bar');
+  const warPlayerText = document.getElementById('war-player-text');
+  const warEnemyText = document.getElementById('war-enemy-text');
   const warPlayerPct = document.getElementById('war-player-pct');
   const warEnemyPct = document.getElementById('war-enemy-pct');
 
@@ -80,6 +82,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (warEnemyBar) warEnemyBar.style.width = `${enemyShare}%`;
     if (warPlayerPct) warPlayerPct.textContent = `${playerShare}%`;
     if (warEnemyPct) warEnemyPct.textContent = `${enemyShare}%`;
+    if (warPlayerText) warPlayerText.innerHTML = `■ AJUDAR ${game.player.name.toUpperCase()} (<span id="war-player-pct">${playerShare}%</span>)`;
+    if (warEnemyText) warEnemyText.innerHTML = `(<span id="war-enemy-pct">${enemyShare}%</span>) AJUDAR ${game.enemy.name.toUpperCase()} ■`;
+
+    // Sync on-screen legend names
+    tiktokManager.updateLegendNames();
   }
 
   game.onUIUpdate = updateHUD;

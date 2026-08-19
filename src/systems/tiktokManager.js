@@ -78,6 +78,8 @@ export class TikTokManager {
   initDOM() {
     this.streamerGiftsGrid = document.getElementById('streamer-gifts-grid');
     this.enemyGiftsGrid = document.getElementById('enemy-gifts-grid');
+    this.onScreenYuriGifts = document.getElementById('on-screen-yuri-gifts');
+    this.onScreenDonaGifts = document.getElementById('on-screen-dona-gifts');
     this.giftBar = document.getElementById('gift-quick-bar');
     this.giftAlertContainer = document.getElementById('gift-alert-container');
     this.leaderboardList = document.getElementById('top-gifters-list');
@@ -93,6 +95,19 @@ export class TikTokManager {
     if (this.connectBtn) {
       this.connectBtn.addEventListener('click', () => this.toggleTikTokConnection());
     }
+
+    this.updateLegendNames();
+  }
+
+  updateLegendNames() {
+    const pName = this.game?.player?.name || 'YURI';
+    const eName = this.game?.enemy?.name || 'DONA';
+    document.querySelectorAll('.legend-player-name').forEach((el) => {
+      el.textContent = pName.toUpperCase();
+    });
+    document.querySelectorAll('.legend-enemy-name').forEach((el) => {
+      el.textContent = eName.toUpperCase();
+    });
   }
 
   getEffectLabel(gift) {
@@ -116,6 +131,30 @@ export class TikTokManager {
       return `+${gift.damage} Dano no Streamer (${punchName})`;
     }
     return `+${gift.damage} Dano (${punchName})`;
+  }
+
+  createOnScreenGiftChip(g, isEnemy) {
+    const chip = document.createElement('div');
+    chip.className = `stream-gift-chip ${isEnemy ? 'chip-enemy' : 'chip-player'}`;
+    chip.setAttribute('data-gift-id', g.id);
+    chip.title = `${g.name} (${g.coins}🪙) - Clique para testar!`;
+
+    chip.innerHTML = `
+      <span class="chip-icon">${g.icon}</span>
+      <div class="chip-info">
+        <span class="chip-name">${g.name}</span>
+        <span class="chip-cost">${g.coins.toLocaleString('pt-BR')} 🪙</span>
+      </div>
+      <span class="chip-dmg ${isEnemy ? 'dmg-enemy' : 'dmg-player'}">+${g.damage}</span>
+    `;
+
+    chip.addEventListener('click', () => {
+      const randomNames = ['Live_Chat', 'Fã_do_Yuri', 'Troll_Dona', 'VIP_Boxeador', 'Super_Doador', 'Top_Stream'];
+      const randomName = randomNames[Math.floor(Math.random() * randomNames.length)];
+      this.triggerGift(g.id, 1, randomName);
+    });
+
+    return chip;
   }
 
   createGiftCardElement(g, isEnemy) {
@@ -166,7 +205,24 @@ export class TikTokManager {
   }
 
   renderGiftButtons() {
-    // If we have the modern live stream legend grids:
+    // 1. Render on-screen live footer chips
+    if (this.onScreenYuriGifts && this.onScreenDonaGifts) {
+      this.onScreenYuriGifts.innerHTML = '';
+      this.onScreenDonaGifts.innerHTML = '';
+
+      this.gifts.forEach((g) => {
+        const isEnemy = g.target === 'enemy' || g.target === 'heal_enemy';
+        const chip = this.createOnScreenGiftChip(g, isEnemy);
+
+        if (isEnemy) {
+          this.onScreenDonaGifts.appendChild(chip);
+        } else {
+          this.onScreenYuriGifts.appendChild(chip);
+        }
+      });
+    }
+
+    // 2. Render settings modal cards
     if (this.streamerGiftsGrid && this.enemyGiftsGrid) {
       this.streamerGiftsGrid.innerHTML = '';
       this.enemyGiftsGrid.innerHTML = '';
@@ -192,6 +248,8 @@ export class TikTokManager {
         this.giftBar.appendChild(card);
       });
     }
+
+    this.updateLegendNames();
   }
 
   // Trigger gift effect with target routing (Streamer vs Enemy Boss)
@@ -201,6 +259,13 @@ export class TikTokManager {
 
     // Play Throttled Gift Sound
     audio.playGiftAlert(gift.coins >= 500 || repeatCount >= 20);
+
+    // Pulse animation on corresponding on-screen gift chips
+    document.querySelectorAll(`.stream-gift-chip[data-gift-id="${gift.id}"]`).forEach((el) => {
+      el.classList.remove('gift-pop-pulse');
+      void el.offsetWidth;
+      el.classList.add('gift-pop-pulse');
+    });
 
     // Show on-screen popup alert with target indication
     this.showGiftAlert(username, gift, repeatCount, userAvatar);
