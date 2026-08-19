@@ -240,6 +240,18 @@ wss.on('connection', (ws) => {
   });
 });
 
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.log(`\n================================================================`);
+    console.log(`⚠️ O servidor do jogo já está ATIVO na porta ${PORT}!`);
+    console.log(`🎮 Abra o jogo no navegador: http://localhost:${PORT}`);
+    console.log(`================================================================\n`);
+    process.exit(0);
+  } else {
+    console.error('Erro no servidor local:', err);
+  }
+});
+
 server.listen(PORT, () => {
   console.log(`\n================================================================`);
   console.log(`🥊 PUNCH FACE LIVE - SERVIDOR LOCAL DO JOGO & BRIDGE ATIVO`);

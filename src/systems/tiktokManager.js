@@ -564,6 +564,35 @@ export class TikTokManager {
                 statusChip.style.color = '#ff9900';
                 statusChip.style.background = 'rgba(255, 153, 0, 0.15)';
               }
+            } else if (data.event === 'disconnected') {
+              // Bridge lost the connection to TikTok (network hiccup, etc) and
+              // is already retrying in the background. Without this, the chip
+              // stays stuck on the old green "AO VIVO" text forever, so gifts
+              // silently stop working with no visible sign anything is wrong.
+              if (statusChip) {
+                statusChip.textContent = `🟡 Conexão com a live caiu. Reconectando...`;
+                statusChip.style.color = '#ffea00';
+                statusChip.style.background = 'rgba(255, 234, 0, 0.15)';
+              }
+            } else if (data.event === 'streamEnd') {
+              if (statusChip) {
+                statusChip.textContent = `⚫ A live terminou. Aguardando você iniciar de novo...`;
+                statusChip.style.color = '#ff5577';
+                statusChip.style.background = 'rgba(255, 0, 85, 0.15)';
+              }
+            } else if (data.event === 'reconnecting') {
+              if (statusChip) {
+                const attemptText = data.attempt ? ` (tentativa ${data.attempt}${data.max ? `/${data.max}` : ''})` : '';
+                statusChip.textContent = `🟡 Reconectando à live de @${data.username || username}...${attemptText}`;
+                statusChip.style.color = '#ffea00';
+                statusChip.style.background = 'rgba(255, 234, 0, 0.15)';
+              }
+            } else if (data.event === 'unstable') {
+              if (statusChip) {
+                statusChip.textContent = `⚠️ Conexão instável com @${data.username || username}, presentes podem falhar...`;
+                statusChip.style.color = '#ff9900';
+                statusChip.style.background = 'rgba(255, 153, 0, 0.15)';
+              }
             }
           } catch (e) {
             console.error(e);
