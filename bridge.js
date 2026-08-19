@@ -1,4 +1,4 @@
-import { WebcastPushConnection } from 'tiktok-live-connector';
+import { TikTokLiveConnection } from 'tiktok-live-connector';
 import { WebSocketServer } from 'ws';
 import http from 'http';
 import fs from 'fs';
@@ -27,15 +27,100 @@ const MIME_TYPES = {
   '.mp3': 'audio/mpeg'
 };
 
-// HTTP Static Server
+let wss = null;
+let tiktokLiveConnection = null;
+let currentUsername = DEFAULT_USERNAME;
+let retryTimer = null;
+let isConnectedToTikTok = false;
+const streakTracker = new Map();
+
+function broadcast(data) {
+  if (!wss) return;
+  const json = JSON.stringify(data);
+  wss.clients.forEach((client) => {
+    if (client.readyState === 1) { // 1 = OPEN
+      client.send(json);
+    }
+  });
+}
+
+// HTTP Server with Webhooks for TikFinity & direct URL trigger
 const server = http.createServer((req, res) => {
-  let reqPath = req.url.split('?')[0];
-  if (reqPath === '/') reqPath = '/index.html';
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    res.writeHead(200);
+    res.end();
+    return;
+  }
+
+  const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+  const reqPath = parsedUrl.pathname;
+
+  // 1. Webhook endpoint for TikFinity (POST /gift or /api/gift)
+  if (req.method === 'POST' && (reqPath === '/gift' || reqPath === '/api/gift')) {
+    let body = '';
+    req.on('data', (chunk) => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const data = JSON.parse(body || '{}');
+        const giftName = data.giftName || data.name || data.gift || 'Rosa';
+        const repeatCount = parseInt(data.repeatCount || data.count || data.amount || 1, 10);
+        const uniqueId = data.uniqueId || data.username || data.user || 'TikFinity_Live';
+
+        console.log(`🎁 [WEBHOOK/TIKFINITY] @${uniqueId} enviou ${repeatCount}x ${giftName}!`);
+
+        broadcast({
+          event: 'gift',
+          uniqueId: uniqueId,
+          nickname: uniqueId,
+          giftId: String(data.giftId || '5655'),
+          giftName: giftName,
+          repeatCount: repeatCount
+        });
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, gift: giftName, count: repeatCount }));
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // 2. Instant URL Trigger (GET /trigger?gift=rose&count=5)
+  if (req.method === 'GET' && (reqPath === '/trigger' || reqPath === '/api/trigger')) {
+    const giftName = parsedUrl.searchParams.get('gift') || 'rose';
+    const repeatCount = parseInt(parsedUrl.searchParams.get('count') || '1', 10);
+    const uniqueId = parsedUrl.searchParams.get('user') || 'Teste_Navegador';
+
+    console.log(`🎁 [TESTE VIA URL] @${uniqueId} disparou ${repeatCount}x ${giftName}!`);
+
+    broadcast({
+      event: 'gift',
+      uniqueId: uniqueId,
+      nickname: uniqueId,
+      giftId: giftName,
+      giftName: giftName,
+      repeatCount: repeatCount
+    });
+
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ success: true, message: `Disparado ${repeatCount}x ${giftName} com sucesso!` }));
+    return;
+  }
+
+  // 3. Static Game Files Serving
+  let filePathParam = reqPath;
+  if (filePathParam === '/') filePathParam = '/index.html';
 
   const tryPaths = [
-    path.join(__dirname, 'dist', reqPath),
-    path.join(__dirname, 'public', reqPath),
-    path.join(__dirname, reqPath)
+    path.join(__dirname, 'dist', filePathParam),
+    path.join(__dirname, 'public', filePathParam),
+    path.join(__dirname, filePathParam)
   ];
 
   let targetPath = null;
@@ -47,7 +132,6 @@ const server = http.createServer((req, res) => {
   }
 
   if (!targetPath) {
-    // Fallback to dist/index.html or index.html
     const indexFallback = fs.existsSync(path.join(__dirname, 'dist', 'index.html'))
       ? path.join(__dirname, 'dist', 'index.html')
       : path.join(__dirname, 'index.html');
@@ -60,10 +144,7 @@ const server = http.createServer((req, res) => {
   if (targetPath && fs.existsSync(targetPath)) {
     const ext = path.extname(targetPath).toLowerCase();
     const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-    res.writeHead(200, {
-      'Content-Type': contentType,
-      'Access-Control-Allow-Origin': '*'
-    });
+    res.writeHead(200, { 'Content-Type': contentType });
     fs.createReadStream(targetPath).pipe(res);
   } else {
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -72,22 +153,7 @@ const server = http.createServer((req, res) => {
 });
 
 // WebSocket Server
-const wss = new WebSocketServer({ server });
-
-let tiktokLiveConnection = null;
-let currentUsername = DEFAULT_USERNAME;
-let retryTimer = null;
-let isConnectedToTikTok = false;
-const streakTracker = new Map();
-
-function broadcast(data) {
-  const json = JSON.stringify(data);
-  wss.clients.forEach((client) => {
-    if (client.readyState === 1) {
-      client.send(json);
-    }
-  });
-}
+wss = new WebSocketServer({ server });
 
 function connectToTikTok(username) {
   if (retryTimer) {
@@ -109,7 +175,7 @@ function connectToTikTok(username) {
   console.log(`🔄 CONECTANDO NA LIVE DO TIKTOK DE: @${cleanUser}...`);
   console.log(`======================================================`);
 
-  tiktokLiveConnection = new WebcastPushConnection(cleanUser, {
+  tiktokLiveConnection = new TikTokLiveConnection(cleanUser, {
     processInitialData: false,
     enableExtendedGiftInfo: true,
     requestPollingIntervalMs: 1000
@@ -120,12 +186,12 @@ function connectToTikTok(username) {
     .then((state) => {
       isConnectedToTikTok = true;
       console.log(`\n🎉 ✅ SUCESSO! Conectado na LIVE de @${cleanUser}!`);
-      console.log(`📍 Room ID: ${state.roomId}`);
-      console.log(`👀 Aguardando presentes e socos em tempo real...\n`);
+      console.log(`📍 Room ID: ${state?.roomId || 'OK'}`);
+      console.log(`👀 Escutando presentes, likes e socos em tempo real...\n`);
 
       broadcast({
         event: 'connected',
-        roomId: state.roomId,
+        roomId: state?.roomId,
         username: cleanUser
       });
     })
@@ -133,18 +199,17 @@ function connectToTikTok(username) {
       isConnectedToTikTok = false;
       const errMsg = err.message || 'LIVE offline';
       console.log(`\n⏳ A live de @${cleanUser} está OFFLINE no momento (${errMsg}).`);
-      console.log(`🔄 Tentando reconectar automaticamente a cada 8 segundos...`);
+      console.log(`🔄 Tentando reconectar automaticamente a cada 6 segundos...`);
       console.log(`💡 Assim que você clicar em "Iniciar LIVE" no TikTok Studio, conectará sozinho!\n`);
 
       broadcast({
         event: 'error',
-        message: `Live @${cleanUser} está offline. Aguardando você iniciar no TikTok Studio...`
+        message: `Aguardando live de @${cleanUser}... (${errMsg})`
       });
 
-      // Tenta reconectar a cada 8 segundos automaticamente
       retryTimer = setTimeout(() => {
         connectToTikTok(cleanUser);
-      }, 8000);
+      }, 6000);
     });
 
   // Escuta presentes
@@ -167,7 +232,7 @@ function connectToTikTok(username) {
     const giftName = data.extendedGiftInfo?.name || data.giftName || 'Rosa';
     const giftId = String(data.giftId || '5655');
 
-    console.log(`🎁 [PRESENTE RECEBIDO] @${data.uniqueId} enviou ${countToTrigger}x ${giftName}!`);
+    console.log(`🎁 [PRESENTE TIKTOK] @${data.uniqueId} enviou ${countToTrigger}x ${giftName}!`);
 
     broadcast({
       event: 'gift',
@@ -205,14 +270,14 @@ function connectToTikTok(username) {
     isConnectedToTikTok = false;
     console.log(`🔴 Desconectado da live de @${cleanUser}. Reconectando...`);
     broadcast({ event: 'disconnected' });
-    retryTimer = setTimeout(() => connectToTikTok(cleanUser), 8000);
+    retryTimer = setTimeout(() => connectToTikTok(cleanUser), 6000);
   });
 
   tiktokLiveConnection.on('streamEnd', () => {
     isConnectedToTikTok = false;
     console.log(`🔴 Live de @${cleanUser} finalizou.`);
     broadcast({ event: 'streamEnd' });
-    retryTimer = setTimeout(() => connectToTikTok(cleanUser), 8000);
+    retryTimer = setTimeout(() => connectToTikTok(cleanUser), 6000);
   });
 }
 
@@ -242,10 +307,8 @@ wss.on('connection', (ws) => {
 
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
-    console.log(`\n================================================================`);
-    console.log(`⚠️ O servidor do jogo já está ATIVO na porta ${PORT}!`);
-    console.log(`🎮 Abra o jogo no navegador: http://localhost:${PORT}`);
-    console.log(`================================================================\n`);
+    console.log(`\n⚠️ O servidor do jogo já está ATIVO na porta ${PORT}!`);
+    console.log(`🎮 Abra o jogo no navegador: http://localhost:${PORT}\n`);
     process.exit(0);
   } else {
     console.error('Erro no servidor local:', err);
@@ -256,7 +319,8 @@ server.listen(PORT, () => {
   console.log(`\n================================================================`);
   console.log(`🥊 PUNCH FACE LIVE - SERVIDOR LOCAL DO JOGO & BRIDGE ATIVO`);
   console.log(`🎮 LINK DO JOGO NO NAVEGADOR: http://localhost:${PORT}`);
-  console.log(`📡 CONTA DO TIKTOK CONFIGURADA: @${currentUsername}`);
+  console.log(`📡 CONTA DO TIKTOK: @${currentUsername}`);
+  console.log(`🔗 WEBHOOK TIKFINITY: http://localhost:${PORT}/gift`);
   console.log(`================================================================\n`);
 
   connectToTikTok(currentUsername);
