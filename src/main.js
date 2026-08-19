@@ -337,8 +337,8 @@ document.addEventListener('DOMContentLoaded', () => {
   saveBattleRulesBtn?.addEventListener('click', () => {
     const pName = playerNameInput?.value.trim() || 'STREAMER';
     const eName = enemyNameInput?.value.trim() || 'BOSS FIGHTER';
-    const pMaxHp = parseInt(playerMaxHpInput?.value, 10) || 10000;
-    const eMaxHp = parseInt(enemyMaxHpInput?.value, 10) || 10000;
+    const pMaxHp = parseInt(playerMaxHpInput?.value, 10) || 20000;
+    const eMaxHp = parseInt(enemyMaxHpInput?.value, 10) || 20000;
 
     game.setFightersConfig({
       playerName: pName,

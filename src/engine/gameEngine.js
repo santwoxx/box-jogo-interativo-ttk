@@ -12,14 +12,14 @@ export class GameEngine {
     this.width = 1280;
     this.height = 720;
 
-    // Boxers (Default 10,000 HP for balanced TikTok stream battles)
+    // Boxers (Default 20,000 HP: exactly 2,000 roses to defeat)
     this.player = new Boxer({
       id: 'player',
       name: 'YURI',
       isPlayer: true,
       baseX: 420,
       baseY: 530,
-      maxHp: 10000,
+      maxHp: 20000,
       gloveColor: '#00e5ff',
       trunksColor: '#1a237e',
       headSrc: '/assets/faces/yuri22.png'
@@ -31,7 +31,7 @@ export class GameEngine {
       isPlayer: false,
       baseX: 860,
       baseY: 530,
-      maxHp: 10000,
+      maxHp: 20000,
       gloveColor: '#ff0055',
       trunksColor: '#b71c1c',
       headSrc: '/assets/faces/Dona.png'
@@ -261,19 +261,19 @@ export class GameEngine {
 
   loadSavedFightersConfig() {
     try {
-      const saved = localStorage.getItem('punch_boxing_fighters_config_v2') || localStorage.getItem('punch_boxing_fighters_config');
+      const saved = localStorage.getItem('punch_boxing_fighters_config_v3') || localStorage.getItem('punch_boxing_fighters_config_v2') || localStorage.getItem('punch_boxing_fighters_config');
       if (saved) {
         const data = JSON.parse(saved);
         if (data.playerName && !['VOCÊ', 'STREAMER'].includes(data.playerName)) this.player.name = data.playerName;
         if (data.enemyName && !['BOSS', 'BOSS FIGHTER'].includes(data.enemyName)) this.enemy.name = data.enemyName;
         if (data.playerMaxHp) {
           const val = parseInt(data.playerMaxHp, 10);
-          this.player.maxHp = val <= 1000 ? 10000 : val;
+          this.player.maxHp = val <= 10000 ? 20000 : val;
           this.player.hp = this.player.maxHp;
         }
         if (data.enemyMaxHp) {
           const val = parseInt(data.enemyMaxHp, 10);
-          this.enemy.maxHp = val <= 1000 ? 10000 : val;
+          this.enemy.maxHp = val <= 10000 ? 20000 : val;
           this.enemy.hp = this.enemy.maxHp;
         }
       }
