@@ -79,6 +79,8 @@ export class GameEngine {
 
     this.lastFrameTime = performance.now();
     this.isRunning = false;
+    // Bind once so requestAnimationFrame doesn't allocate a new closure every frame
+    this.loop = this.loop.bind(this);
 
     this.initCanvasSize();
     window.addEventListener('resize', () => this.initCanvasSize());
@@ -625,6 +627,6 @@ export class GameEngine {
     this.update(dt);
     this.render();
 
-    requestAnimationFrame((t) => this.loop(t));
+    requestAnimationFrame(this.loop);
   }
 }

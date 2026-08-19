@@ -238,6 +238,10 @@ export class Boxer {
   }
 
   render(ctx) {
+    if (!this._gradientsReady) {
+      this.buildGradients(ctx);
+    }
+
     ctx.save();
     ctx.translate(this.x, this.y);
 
@@ -275,14 +279,54 @@ export class Boxer {
 
   renderShadow(ctx) {
     ctx.save();
-    const grad = ctx.createRadialGradient(0, 115, 10, 0, 115, 100);
-    grad.addColorStop(0, 'rgba(0, 0, 0, 0.6)');
-    grad.addColorStop(0.7, 'rgba(0, 0, 0, 0.25)');
-    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = grad;
+    ctx.fillStyle = this._shadowGrad;
     ctx.beginPath();
     ctx.ellipse(0, 115, 100, 26, 0, 0, Math.PI * 2);
     ctx.fill();
+    ctx.restore();
+  }
+
+  drawMuscularLeg(ctx, x, y, w, h, isFront, gradient) {
+    ctx.save();
+    ctx.translate(x, y);
+
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.roundRect(-w / 2, 0, w, h, [10, 10, 8, 8]);
+    ctx.fill();
+
+    // Calf muscle curve
+    ctx.fillStyle = this.skinHighlight;
+    ctx.beginPath();
+    ctx.ellipse(isFront ? this.facing * 3 : -this.facing * 3, h * 0.45, 4, 14, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  drawBoot(ctx, bx, by, bw, bh) {
+    ctx.save();
+    ctx.translate(bx, by);
+
+    ctx.fillStyle = this._bootGrad;
+    ctx.beginPath();
+    ctx.roundRect(-bw / 2, 0, bw, bh, [6, 6, 8, 8]);
+    ctx.fill();
+
+    // Golden sole
+    ctx.fillStyle = '#ffcc00';
+    ctx.fillRect(-bw / 2 - 2, bh - 6, bw + 4, 6);
+
+    // White boot laces
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    for (let i = 4; i < bh - 8; i += 5) {
+      ctx.beginPath();
+      ctx.moveTo(-bw * 0.28, i);
+      ctx.lineTo(bw * 0.28, i);
+      ctx.stroke();
+    }
+
     ctx.restore();
   }
 
@@ -290,85 +334,23 @@ export class Boxer {
     ctx.save();
     const dir = this.facing;
 
-    // Muscular Calves and Quads
-    const drawMuscularLeg = (x, y, w, h, isFront = false) => {
-      ctx.save();
-      ctx.translate(x, y);
-
-      // Thigh gradient
-      const legGrad = ctx.createLinearGradient(-w / 2, 0, w / 2, 0);
-      legGrad.addColorStop(0, this.skinShadow);
-      legGrad.addColorStop(0.4, this.skinTone);
-      legGrad.addColorStop(1, this.skinShadow);
-
-      ctx.fillStyle = legGrad;
-      ctx.beginPath();
-      ctx.roundRect(-w / 2, 0, w, h, [10, 10, 8, 8]);
-      ctx.fill();
-
-      // Calf muscle curve
-      ctx.fillStyle = this.skinHighlight;
-      ctx.beginPath();
-      ctx.ellipse(isFront ? dir * 3 : -dir * 3, h * 0.45, 4, 14, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.restore();
-    };
-
     // Back leg
-    drawMuscularLeg(-dir * 26, 32, 28, 70, false);
+    this.drawMuscularLeg(ctx, -dir * 26, 32, 28, 70, false, this._backLegGrad);
     // Front leg
-    drawMuscularLeg(dir * 18, 25, 30, 75, true);
+    this.drawMuscularLeg(ctx, dir * 18, 25, 30, 75, true, this._frontLegGrad);
 
     // High Top Boxing Boots
-    const drawBoot = (bx, by, bw, bh) => {
-      ctx.save();
-      ctx.translate(bx, by);
-
-      // Boot base
-      const bootGrad = ctx.createLinearGradient(0, 0, 0, bh);
-      bootGrad.addColorStop(0, '#222736');
-      bootGrad.addColorStop(1, '#0e111a');
-      ctx.fillStyle = bootGrad;
-      ctx.beginPath();
-      ctx.roundRect(-bw / 2, 0, bw, bh, [6, 6, 8, 8]);
-      ctx.fill();
-
-      // Golden sole
-      ctx.fillStyle = '#ffcc00';
-      ctx.fillRect(-bw / 2 - 2, bh - 6, bw + 4, 6);
-
-      // White boot laces
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2;
-      for (let i = 4; i < bh - 8; i += 5) {
-        ctx.beginPath();
-        ctx.moveTo(-bw * 0.28, i);
-        ctx.lineTo(bw * 0.28, i);
-        ctx.stroke();
-      }
-
-      ctx.restore();
-    };
-
-    drawBoot(-dir * 28, 92, 38, 24);
-    drawBoot(dir * 20, 92, 40, 24);
+    this.drawBoot(ctx, -dir * 28, 92, 38, 24);
+    this.drawBoot(ctx, dir * 20, 92, 40, 24);
 
     ctx.restore();
   }
 
   renderTrunks(ctx) {
     ctx.save();
-    const dir = this.facing;
 
     // Satin Boxing Shorts with depth
-    const trunksGrad = ctx.createLinearGradient(-55, 0, 55, 0);
-    trunksGrad.addColorStop(0, this.trunksColor);
-    trunksGrad.addColorStop(0.3, this.trunksTrim);
-    trunksGrad.addColorStop(0.5, this.trunksColor);
-    trunksGrad.addColorStop(1, '#05070e');
-
-    ctx.fillStyle = trunksGrad;
+    ctx.fillStyle = this._trunksGrad;
     ctx.beginPath();
     ctx.moveTo(-54, -6);
     ctx.lineTo(54, -6);
@@ -397,12 +379,7 @@ export class Boxer {
     ctx.fill();
 
     // Metallic Gold Championship Belt
-    const beltGrad = ctx.createLinearGradient(-56, -14, 56, 4);
-    beltGrad.addColorStop(0, '#ffd700');
-    beltGrad.addColorStop(0.5, '#fff280');
-    beltGrad.addColorStop(1, '#cca000');
-
-    ctx.fillStyle = beltGrad;
+    ctx.fillStyle = this._beltGrad;
     ctx.beginPath();
     ctx.roundRect(-56, -14, 112, 20, 6);
     ctx.fill();
@@ -427,17 +404,37 @@ export class Boxer {
     ctx.restore();
   }
 
+  drawPec(ctx, px, py, pw, ph) {
+    ctx.fillStyle = this.skinShadow;
+    ctx.beginPath();
+    ctx.roundRect(px, py, pw, ph, [10, 10, 14, 14]);
+    ctx.fill();
+
+    ctx.fillStyle = this.skinHighlight;
+    ctx.beginPath();
+    ctx.ellipse(px + pw * 0.45, py + ph * 0.35, pw * 0.35, ph * 0.25, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  drawAbsRow(ctx, ay, ah) {
+    ctx.fillStyle = this.skinShadow;
+    ctx.beginPath();
+    ctx.roundRect(-22, ay, 20, ah, 4);
+    ctx.roundRect(2, ay, 20, ah, 4);
+    ctx.fill();
+
+    ctx.fillStyle = this.skinHighlight;
+    ctx.beginPath();
+    ctx.ellipse(-12, ay + ah * 0.4, 6, ah * 0.25, 0, 0, Math.PI * 2);
+    ctx.ellipse(12, ay + ah * 0.4, 6, ah * 0.25, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
   renderTorso(ctx) {
     ctx.save();
-    const dir = this.facing;
 
     // Muscular V-Shape Torso (Broad shoulders, tight waist)
-    const torsoGrad = ctx.createRadialGradient(0, -50, 10, 0, -40, 70);
-    torsoGrad.addColorStop(0, this.skinHighlight);
-    torsoGrad.addColorStop(0.5, this.skinTone);
-    torsoGrad.addColorStop(1, this.skinShadow);
-
-    ctx.fillStyle = torsoGrad;
+    ctx.fillStyle = this._torsoGrad;
     ctx.beginPath();
     ctx.moveTo(-56, -88); // Broad left shoulder
     ctx.lineTo(56, -88);  // Broad right shoulder
@@ -447,20 +444,8 @@ export class Boxer {
     ctx.fill();
 
     // Pectoral Muscle Definition (Chest)
-    const drawPec = (px, py, pw, ph) => {
-      ctx.fillStyle = this.skinShadow;
-      ctx.beginPath();
-      ctx.roundRect(px, py, pw, ph, [10, 10, 14, 14]);
-      ctx.fill();
-
-      ctx.fillStyle = this.skinHighlight;
-      ctx.beginPath();
-      ctx.ellipse(px + pw * 0.45, py + ph * 0.35, pw * 0.35, ph * 0.25, 0, 0, Math.PI * 2);
-      ctx.fill();
-    };
-
-    drawPec(-48, -76, 44, 30);
-    drawPec(4, -76, 44, 30);
+    this.drawPec(ctx, -48, -76, 44, 30);
+    this.drawPec(ctx, 4, -76, 44, 30);
 
     // Center Sternum Line
     ctx.strokeStyle = this.skinShadow;
@@ -471,23 +456,9 @@ export class Boxer {
     ctx.stroke();
 
     // Chiseled 6-Pack Abs
-    const drawAbsRow = (ay, ah) => {
-      ctx.fillStyle = this.skinShadow;
-      ctx.beginPath();
-      ctx.roundRect(-22, ay, 20, ah, 4);
-      ctx.roundRect(2, ay, 20, ah, 4);
-      ctx.fill();
-
-      ctx.fillStyle = this.skinHighlight;
-      ctx.beginPath();
-      ctx.ellipse(-12, ay + ah * 0.4, 6, ah * 0.25, 0, 0, Math.PI * 2);
-      ctx.ellipse(12, ay + ah * 0.4, 6, ah * 0.25, 0, 0, Math.PI * 2);
-      ctx.fill();
-    };
-
-    drawAbsRow(-42, 10);
-    drawAbsRow(-28, 10);
-    drawAbsRow(-14, 10);
+    this.drawAbsRow(ctx, -42, 10);
+    this.drawAbsRow(ctx, -28, 10);
+    this.drawAbsRow(ctx, -14, 10);
 
     ctx.restore();
   }
@@ -503,12 +474,7 @@ export class Boxer {
     ctx.scale(this.squishX, this.squishY);
 
     // Muscular Trapezoid Neck
-    const neckGrad = ctx.createLinearGradient(-22, 0, 22, 0);
-    neckGrad.addColorStop(0, this.skinShadow);
-    neckGrad.addColorStop(0.5, this.skinTone);
-    neckGrad.addColorStop(1, this.skinShadow);
-
-    ctx.fillStyle = neckGrad;
+    ctx.fillStyle = this._neckGrad;
     ctx.beginPath();
     ctx.moveTo(-24, 22);
     ctx.lineTo(24, 22);
@@ -721,15 +687,8 @@ export class Boxer {
     ctx.translate(x, y);
     ctx.scale(scale, scale);
 
-    // Glove 3D Radial Gradient
-    const gloveGrad = ctx.createRadialGradient(-dir * 6, -8, 4, 0, 0, 30);
-    gloveGrad.addColorStop(0, '#ffffff');
-    gloveGrad.addColorStop(0.3, this.gloveColor);
-    gloveGrad.addColorStop(0.85, this.gloveDark);
-    gloveGrad.addColorStop(1, '#050a14');
-
     // Main Glove Fist
-    ctx.fillStyle = gloveGrad;
+    ctx.fillStyle = this._gloveGrad;
     ctx.beginPath();
     ctx.arc(0, 0, 28, 0, Math.PI * 2);
     ctx.fill();

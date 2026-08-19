@@ -3,14 +3,17 @@ export class HotkeyManager {
   constructor(game) {
     this.game = game;
 
-    // Default key mappings
+    // Default key mappings for TikFinity / Stream Deck / Keyboard
     this.keyMap = {
-      'Digit1': { action: 'PLAYER_JAB', label: 'Soco Rápido (Jab)', category: 'player' },
-      'Digit2': { action: 'PLAYER_CROSS', label: 'Direto Pesado (Cross)', category: 'player' },
-      'Digit3': { action: 'PLAYER_HOOK', label: 'Cruzado Potente (Hook)', category: 'player' },
-      'Digit4': { action: 'PLAYER_UPPERCUT', label: 'Mega Gancho (Uppercut KO)', category: 'player' },
-      'Digit5': { action: 'ENEMY_PUNCH', label: 'Golpe do Inimigo (Contra-Ataque)', category: 'enemy' },
-      'Digit6': { action: 'PLAYER_HEAL', label: 'Curar Jogador (+100 HP)', category: 'system' },
+      'Digit1': { action: 'PLAYER_JAB', label: '🟢 Yuri - Soco Jab (Rosa / 1🪙)', category: 'player' },
+      'Digit2': { action: 'PLAYER_CROSS', label: '🟢 Yuri - Direto (Heart Me / 10🪙)', category: 'player' },
+      'Digit3': { action: 'PLAYER_HOOK', label: '🟢 Yuri - Cruzado (Óculos / 199🪙)', category: 'player' },
+      'Digit4': { action: 'PLAYER_UPPERCUT', label: '🟢 Yuri - Uppercut (Money Gun / 500🪙)', category: 'player' },
+      'Digit5': { action: 'PLAYER_SUPER', label: '🟢 Yuri - Super Combo (Galáxia / 1000🪙)', category: 'player' },
+      'Digit7': { action: 'ENEMY_JAB', label: '🔴 Dona - Soco Jab (Casquinha / 1🪙)', category: 'enemy' },
+      'Digit8': { action: 'ENEMY_HOOK', label: '🔴 Dona - Cruzado (Boné / 99🪙)', category: 'enemy' },
+      'Digit9': { action: 'ENEMY_UPPERCUT', label: '🔴 Dona - Uppercut (Baleia / 2150🪙)', category: 'enemy' },
+      'Digit0': { action: 'ENEMY_SUPER', label: '🔴 Dona - Super Combo (Leão / 29999🪙)', category: 'enemy' },
       'KeyR': { action: 'RESET_MATCH', label: 'Próximo Round / Reiniciar', category: 'system' },
       'KeyH': { action: 'TOGGLE_UI', label: 'Ocultar / Exibir Painel (Modo Live Limpa)', category: 'system' }
     };
@@ -51,22 +54,32 @@ export class HotkeyManager {
   executeAction(actionName, payload = {}) {
     switch (actionName) {
       case 'PLAYER_JAB':
-        this.game.playerAttack('jab', payload.damage, payload.gifter);
+        this.game.playerAttack('jab', payload.damage || 10, payload.gifter || { username: 'Yuri Fan' });
         break;
       case 'PLAYER_CROSS':
-        this.game.playerAttack('cross', payload.damage, payload.gifter);
+        this.game.playerAttack('cross', payload.damage || 120, payload.gifter || { username: 'Yuri Fan' });
         break;
       case 'PLAYER_HOOK':
-        this.game.playerAttack('hook', payload.damage, payload.gifter);
+        this.game.playerAttack('hook', payload.damage || 2400, payload.gifter || { username: 'Yuri Fan' });
         break;
       case 'PLAYER_UPPERCUT':
-        this.game.playerAttack('uppercut', payload.damage, payload.gifter);
+        this.game.playerAttack('uppercut', payload.damage || 6000, payload.gifter || { username: 'Yuri Fan' });
         break;
       case 'PLAYER_SUPER':
-        this.game.playerAttack('super', payload.damage, payload.gifter);
+        this.game.playerAttack('super', payload.damage || 12000, payload.gifter || { username: 'Yuri Fan' });
         break;
+      case 'ENEMY_JAB':
       case 'ENEMY_PUNCH':
-        this.game.enemyAttack(payload.type || 'cross', payload.damage);
+        this.game.enemyAttack('jab', payload.damage || 10);
+        break;
+      case 'ENEMY_HOOK':
+        this.game.enemyAttack('hook', payload.damage || 1200);
+        break;
+      case 'ENEMY_UPPERCUT':
+        this.game.enemyAttack('uppercut', payload.damage || 14000);
+        break;
+      case 'ENEMY_SUPER':
+        this.game.enemyAttack('super', payload.damage || 20000);
         break;
       case 'PLAYER_HEAL':
         this.game.healPlayer(payload.amount || 100);
@@ -84,12 +97,15 @@ export class HotkeyManager {
     // Expose global window object for external scripts / browser extensions / TikFinity webhooks
     window.PunchFaceLive = {
       trigger: (actionName, payload) => this.executeAction(actionName, payload),
-      playerJab: (gifter) => this.executeAction('PLAYER_JAB', { gifter }),
-      playerCross: (gifter) => this.executeAction('PLAYER_CROSS', { gifter }),
-      playerHook: (gifter) => this.executeAction('PLAYER_HOOK', { gifter }),
-      playerUppercut: (gifter) => this.executeAction('PLAYER_UPPERCUT', { gifter }),
-      playerSuper: (gifter) => this.executeAction('PLAYER_SUPER', { gifter }),
-      enemyAttack: () => this.executeAction('ENEMY_PUNCH'),
+      playerJab: (gifter) => this.executeAction('PLAYER_JAB', { damage: 10, gifter }),
+      playerCross: (gifter) => this.executeAction('PLAYER_CROSS', { damage: 120, gifter }),
+      playerHook: (gifter) => this.executeAction('PLAYER_HOOK', { damage: 2400, gifter }),
+      playerUppercut: (gifter) => this.executeAction('PLAYER_UPPERCUT', { damage: 6000, gifter }),
+      playerSuper: (gifter) => this.executeAction('PLAYER_SUPER', { damage: 12000, gifter }),
+      enemyJab: (gifter) => this.executeAction('ENEMY_JAB', { damage: 10, gifter }),
+      enemyHook: (gifter) => this.executeAction('ENEMY_HOOK', { damage: 1200, gifter }),
+      enemyUppercut: (gifter) => this.executeAction('ENEMY_UPPERCUT', { damage: 14000, gifter }),
+      enemySuper: (gifter) => this.executeAction('ENEMY_SUPER', { damage: 20000, gifter }),
       heal: (amount) => this.executeAction('PLAYER_HEAL', { amount }),
       reset: () => this.executeAction('RESET_MATCH')
     };
