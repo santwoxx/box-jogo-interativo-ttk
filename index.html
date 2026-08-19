@@ -16,17 +16,17 @@
         <!-- Player Card (Left) -->
         <div class="compact-fighter-card player-card">
           <div class="hud-avatar">
-            <img id="player-avatar-preview" src="/assets/faces/chad.jpg" alt="Jogador" />
+            <img id="player-avatar-preview" src="/assets/faces/yuri22.png" alt="Yuri" />
           </div>
           <div class="hud-details">
             <div class="hud-name-row">
-              <span class="boxer-name" id="player-name-display">STREAMER</span>
+              <span class="boxer-name" id="player-name-display">YURI</span>
               <span class="ko-badge" id="player-ko-badge">K.O: 0</span>
             </div>
             <div class="hp-bar-outer">
               <div class="hp-bar-fill" id="player-hp-fill" style="width: 100%;"></div>
             </div>
-            <div class="hp-text" id="player-hp-text">1000 / 1000 HP</div>
+            <div class="hp-text" id="player-hp-text">10000 / 10000 HP</div>
           </div>
         </div>
 
@@ -39,17 +39,17 @@
         <!-- Enemy Card (Right) -->
         <div class="compact-fighter-card enemy-card">
           <div class="hud-avatar">
-            <img id="enemy-avatar-preview" src="/assets/faces/boss.jpg" alt="Adversário" />
+            <img id="enemy-avatar-preview" src="/assets/faces/Dona.png" alt="Dona" />
           </div>
           <div class="hud-details">
             <div class="hud-name-row">
-              <span class="boxer-name" id="enemy-name-display">BOSS FIGHTER</span>
+              <span class="boxer-name" id="enemy-name-display">DONA</span>
               <span class="ko-badge" id="enemy-ko-badge">K.O: 0</span>
             </div>
             <div class="hp-bar-outer">
               <div class="hp-bar-fill" id="enemy-hp-fill" style="width: 100%;"></div>
             </div>
-            <div class="hp-text" id="enemy-hp-text">1000 / 1000 HP</div>
+            <div class="hp-text" id="enemy-hp-text">10000 / 10000 HP</div>
           </div>
         </div>
 
@@ -258,9 +258,11 @@
             </div>
 
             <div class="presets-row">
-              <span style="font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.7);">Rostos Prontos:</span>
-              <button class="preset-chip" id="preset-chad-btn">👑 GigaChad Campeão</button>
-              <button class="preset-chip" id="preset-boss-btn">👹 Boss Nervoso</button>
+              <span style="font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.7);">Rostos da Live:</span>
+              <button class="preset-chip" id="preset-yuri-btn">👑 Yuri22</button>
+              <button class="preset-chip" id="preset-dona-btn">👑 Dona</button>
+              <button class="preset-chip" id="preset-chad-btn">GigaChad</button>
+              <button class="preset-chip" id="preset-boss-btn">Boss</button>
             </div>
           </div>
         </div>
@@ -387,7 +389,7 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
               <div class="text-input-group">
                 <label style="color: var(--player-color); font-weight: 800;">👤 Nome do Streamer (Você):</label>
-                <input type="text" id="player-name-input" class="custom-text-input" value="STREAMER" />
+                <input type="text" id="player-name-input" class="custom-text-input" value="YURI" />
                 <label style="color: var(--player-color); margin-top: 6px;">❤️ Vida Máxima (HP):</label>
                 <input type="number" id="player-max-hp-input" class="custom-text-input" value="10000" min="100" max="1000000" step="1000" />
                 <div style="display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;">
@@ -400,7 +402,7 @@
 
               <div class="text-input-group">
                 <label style="color: var(--enemy-color); font-weight: 800;">👹 Nome do Adversário / Boss:</label>
-                <input type="text" id="enemy-name-input" class="custom-text-input" value="BOSS FIGHTER" />
+                <input type="text" id="enemy-name-input" class="custom-text-input" value="DONA" />
                 <label style="color: var(--enemy-color); margin-top: 6px;">❤️ Vida Máxima (HP):</label>
                 <input type="number" id="enemy-max-hp-input" class="custom-text-input" value="10000" min="100" max="1000000" step="1000" />
                 <div style="display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;">

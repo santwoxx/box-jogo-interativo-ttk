@@ -23,6 +23,8 @@ export class FaceCustomizer {
 
     // Presets
     this.presets = {
+      yuri: '/assets/faces/yuri22.png',
+      dona: '/assets/faces/Dona.png',
       chad: '/assets/faces/chad.jpg',
       boss: '/assets/faces/boss.jpg'
     };
@@ -424,14 +426,18 @@ export class FaceCustomizer {
 
   loadSavedProfiles() {
     try {
-      const savedPlayerUrl = localStorage.getItem('punch_boxing_player_head_url');
-      if (savedPlayerUrl) {
+      const savedPlayerUrl = localStorage.getItem('punch_boxing_player_head_url_v2') || localStorage.getItem('punch_boxing_player_head_url');
+      if (savedPlayerUrl && !savedPlayerUrl.includes('chad')) {
         this.game.player.setHeadConfig({ src: savedPlayerUrl });
+      } else {
+        this.game.player.setHeadConfig({ src: '/assets/faces/yuri22.png' });
       }
 
-      const savedEnemyUrl = localStorage.getItem('punch_boxing_enemy_head_url');
-      if (savedEnemyUrl) {
+      const savedEnemyUrl = localStorage.getItem('punch_boxing_enemy_head_url_v2') || localStorage.getItem('punch_boxing_enemy_head_url');
+      if (savedEnemyUrl && !savedEnemyUrl.includes('boss.jpg')) {
         this.game.enemy.setHeadConfig({ src: savedEnemyUrl });
+      } else {
+        this.game.enemy.setHeadConfig({ src: '/assets/faces/Dona.png' });
       }
     } catch (e) {
       console.warn('Error loading saved profiles', e);

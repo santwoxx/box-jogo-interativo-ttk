@@ -383,6 +383,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-capture-snapshot')?.addEventListener('click', () => faceCustomizer.captureWebcamSnapshot());
 
   // Preset face buttons
+  document.getElementById('preset-yuri-btn')?.addEventListener('click', () => faceCustomizer.loadPreset('yuri'));
+  document.getElementById('preset-dona-btn')?.addEventListener('click', () => faceCustomizer.loadPreset('dona'));
   document.getElementById('preset-chad-btn')?.addEventListener('click', () => faceCustomizer.loadPreset('chad'));
   document.getElementById('preset-boss-btn')?.addEventListener('click', () => faceCustomizer.loadPreset('boss'));
 
