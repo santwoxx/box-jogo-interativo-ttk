@@ -3,18 +3,15 @@ export class HotkeyManager {
   constructor(game) {
     this.game = game;
 
-    // Default key mappings for TikFinity / Stream Deck / Keyboard
+    // Default key mappings for TikFinity / Stream Deck / Keyboard.
+    // Kept to 5 gift-triggered keys (1-5) to fit TikFinity's free-plan action cap —
+    // each key now covers a wider band of gifts instead of one key per exact gift.
     this.keyMap = {
-      'Digit1': { action: 'PLAYER_JAB', label: '🟢 Yuri - Soco Jab (Rosa / 1🪙)', category: 'player' },
-      'Digit2': { action: 'PLAYER_CROSS', label: '🟢 Yuri - Direto (Heart Me / 10🪙)', category: 'player' },
-      'Digit3': { action: 'PLAYER_HOOK', label: '🟢 Yuri - Cruzado (Óculos / 199🪙)', category: 'player' },
-      'Digit4': { action: 'PLAYER_UPPERCUT', label: '🟢 Yuri - Uppercut (Money Gun / 500🪙)', category: 'player' },
-      'Digit5': { action: 'PLAYER_SUPER', label: '🟢 Yuri - Super Combo (Galáxia / 1000🪙)', category: 'player' },
-      'Digit6': { action: 'ENEMY_CROSS', label: '🔴 Dona - Direto (Toca Aqui / Rosquinha)', category: 'enemy' },
-      'Digit7': { action: 'ENEMY_JAB', label: '🔴 Dona - Soco Jab (Casquinha / 1🪙)', category: 'enemy' },
-      'Digit8': { action: 'ENEMY_HOOK', label: '🔴 Dona - Cruzado (Boné / 99🪙)', category: 'enemy' },
-      'Digit9': { action: 'ENEMY_UPPERCUT', label: '🔴 Dona - Uppercut (Baleia / 2150🪙)', category: 'enemy' },
-      'Digit0': { action: 'ENEMY_SUPER', label: '🔴 Dona - Super Combo (Leão / 29999🪙)', category: 'enemy' },
+      'Digit1': { action: 'PLAYER_JAB', label: '🟢 Yuri - Leve (Rosa, TikTok, Panda, Heart Me)', category: 'player' },
+      'Digit2': { action: 'PLAYER_HOOK', label: '🟢 Yuri - Médio (Pipoca, Óculos, Luvas, Money Gun)', category: 'player' },
+      'Digit3': { action: 'PLAYER_SUPER', label: '🟢 Yuri - Forte (Galáxia, Universo TikTok)', category: 'player' },
+      'Digit4': { action: 'ENEMY_JAB', label: '🔴 Dona - Leve (Casquinha, Toca Aqui, Rosquinha, Patinho, Boné)', category: 'enemy' },
+      'Digit5': { action: 'ENEMY_SUPER', label: '🔴 Dona - Forte (Corgi, Baleia, Carro, Falcão, Leão)', category: 'enemy' },
       'KeyR': { action: 'RESET_MATCH', label: 'Próximo Round / Reiniciar', category: 'system' },
       'KeyH': { action: 'TOGGLE_UI', label: 'Ocultar / Exibir Painel (Modo Live Limpa)', category: 'system' }
     };
