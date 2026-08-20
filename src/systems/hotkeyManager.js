@@ -10,6 +10,7 @@ export class HotkeyManager {
       'Digit3': { action: 'PLAYER_HOOK', label: '🟢 Yuri - Cruzado (Óculos / 199🪙)', category: 'player' },
       'Digit4': { action: 'PLAYER_UPPERCUT', label: '🟢 Yuri - Uppercut (Money Gun / 500🪙)', category: 'player' },
       'Digit5': { action: 'PLAYER_SUPER', label: '🟢 Yuri - Super Combo (Galáxia / 1000🪙)', category: 'player' },
+      'Digit6': { action: 'ENEMY_CROSS', label: '🔴 Dona - Direto (Toca Aqui / Rosquinha)', category: 'enemy' },
       'Digit7': { action: 'ENEMY_JAB', label: '🔴 Dona - Soco Jab (Casquinha / 1🪙)', category: 'enemy' },
       'Digit8': { action: 'ENEMY_HOOK', label: '🔴 Dona - Cruzado (Boné / 99🪙)', category: 'enemy' },
       'Digit9': { action: 'ENEMY_UPPERCUT', label: '🔴 Dona - Uppercut (Baleia / 2150🪙)', category: 'enemy' },
@@ -72,6 +73,9 @@ export class HotkeyManager {
       case 'ENEMY_PUNCH':
         this.game.enemyAttack('jab', payload.damage || 10);
         break;
+      case 'ENEMY_CROSS':
+        this.game.enemyAttack('cross', payload.damage || 200);
+        break;
       case 'ENEMY_HOOK':
         this.game.enemyAttack('hook', payload.damage || 1200);
         break;
@@ -103,6 +107,7 @@ export class HotkeyManager {
       playerUppercut: (gifter) => this.executeAction('PLAYER_UPPERCUT', { damage: 6000, gifter }),
       playerSuper: (gifter) => this.executeAction('PLAYER_SUPER', { damage: 12000, gifter }),
       enemyJab: (gifter) => this.executeAction('ENEMY_JAB', { damage: 10, gifter }),
+      enemyCross: (gifter) => this.executeAction('ENEMY_CROSS', { damage: 200, gifter }),
       enemyHook: (gifter) => this.executeAction('ENEMY_HOOK', { damage: 1200, gifter }),
       enemyUppercut: (gifter) => this.executeAction('ENEMY_UPPERCUT', { damage: 14000, gifter }),
       enemySuper: (gifter) => this.executeAction('ENEMY_SUPER', { damage: 20000, gifter }),
